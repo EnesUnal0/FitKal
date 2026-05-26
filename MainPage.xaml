@@ -1,0 +1,179 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:fitkal"
+             x:Class="fitkal.MainPage"
+             NavigationPage.HasNavigationBar="False"
+             Shell.NavBarIsVisible="False">
+
+    <Grid>
+        <Image Source="arka_plan.jpg"
+               Aspect="AspectFill"
+               HorizontalOptions="Fill"
+               VerticalOptions="Fill" />
+
+        <Grid RowDefinitions="77, *">
+
+            <local:HeaderView Grid.Row="0" />
+
+            <ScrollView Grid.Row="1">
+                <VerticalStackLayout Padding="20,20,20,30" Spacing="25">
+
+                    <VerticalStackLayout Spacing="5">
+                        <HorizontalStackLayout Spacing="5">
+                            <Label Text="Hoş geldin" TextColor="White" FontSize="26" VerticalOptions="Center"/>
+                            <Label x:Name="LblKullaniciAdi" Text="Enes" TextColor="White" FontAttributes="Bold" FontSize="26" VerticalOptions="Center"/>
+                            <Label Text="," TextColor="White" FontSize="26" VerticalOptions="Center"/>
+                        </HorizontalStackLayout>
+                        <BoxView HeightRequest="1" BackgroundColor="#40FFFFFF" HorizontalOptions="Fill" Margin="0,5,0,0"/>
+                    </VerticalStackLayout>
+
+                    <Border BackgroundColor="#0A2558" Stroke="#1E60D5" StrokeThickness="1.5" Padding="15,20">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="12" />
+                        </Border.StrokeShape>
+
+                        <VerticalStackLayout Spacing="15">
+                            <VerticalStackLayout HorizontalOptions="Center" Spacing="5">
+                                <Label Text="GÜNLÜK ÖZETİNİZ" TextColor="#F9CA1C" FontAttributes="Bold" FontSize="18" HorizontalOptions="Center"/>
+                                <BoxView HeightRequest="1" BackgroundColor="#F9CA1C" WidthRequest="150" HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+
+                            <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto, Auto, Auto" ColumnSpacing="15" RowSpacing="10">
+                                <Grid Grid.Row="0" Grid.Column="0">
+                                    <Label Text="Alınan kalori" TextColor="White" FontSize="13" HorizontalOptions="Start"/>
+                                    <Label x:Name="LblAlinanKalori" Text="0 cal" TextColor="#A0C0F0" FontAttributes="Bold" FontSize="13" HorizontalOptions="End"/>
+                                </Grid>
+                                <Grid Grid.Row="1" Grid.Column="0">
+                                    <Label Text="Yakılan Kalori" TextColor="White" FontSize="13" HorizontalOptions="Start"/>
+                                    <Label x:Name="LblYakilanKalori" Text="0 cal" TextColor="#A0C0F0" FontAttributes="Bold" FontSize="13" HorizontalOptions="End"/>
+                                </Grid>
+                                <Grid Grid.Row="2" Grid.Column="0">
+                                    <Label Text="Net Kalori" TextColor="White" FontSize="13" HorizontalOptions="Start"/>
+                                    <Label x:Name="LblNetKalori" Text="0 cal" TextColor="#FF7043" FontAttributes="Bold" FontSize="13" HorizontalOptions="End"/>
+                                </Grid>
+                                <Grid Grid.Row="3" Grid.Column="0">
+                                    <Label Text="Kalan Kalori" TextColor="White" FontSize="13" HorizontalOptions="Start"/>
+                                    <Label x:Name="LblKalanKalori" Text="2500 cal" TextColor="#4CAF50" FontAttributes="Bold" FontSize="13" HorizontalOptions="End"/>
+                                </Grid>
+
+                                <Grid Grid.Row="0" Grid.Column="1">
+                                    <Label Text="Protein" TextColor="White" FontSize="13" HorizontalOptions="Start"/>
+                                    <Label x:Name="LblProtein" Text="0 g" TextColor="#A0C0F0" FontAttributes="Bold" FontSize="13" HorizontalOptions="End"/>
+                                </Grid>
+                                <Grid Grid.Row="1" Grid.Column="1">
+                                    <Label Text="Karbonhidrat" TextColor="White" FontSize="13" HorizontalOptions="Start"/>
+                                    <Label x:Name="LblKarbonhidrat" Text="0 g" TextColor="#A0C0F0" FontAttributes="Bold" FontSize="13" HorizontalOptions="End"/>
+                                </Grid>
+                                <Grid Grid.Row="2" Grid.Column="1">
+                                    <Label Text="Yağ" TextColor="White" FontSize="13" HorizontalOptions="Start"/>
+                                    <Label x:Name="LblYag" Text="0 g" TextColor="#A0C0F0" FontAttributes="Bold" FontSize="13" HorizontalOptions="End"/>
+                                </Grid>
+                                <Grid Grid.Row="3" Grid.Column="1">
+                                    <Label Text="Şeker" TextColor="White" FontSize="13" HorizontalOptions="Start"/>
+                                    <Label x:Name="LblSeker" Text="0 g" TextColor="#A0C0F0" FontAttributes="Bold" FontSize="13" HorizontalOptions="End"/>
+                                </Grid>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Grid ColumnDefinitions="*, *" ColumnSpacing="15" HeightRequest="180">
+
+                        <Border Grid.Column="0" BackgroundColor="#0A2558" Stroke="#1E60D5" StrokeThickness="1.5" Padding="0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+                            <Grid>
+                                <Image Source="ogun_bg.png" Aspect="AspectFill" Opacity="0.5"/>
+                                <Border WidthRequest="45" HeightRequest="45" HorizontalOptions="Center" VerticalOptions="Center" BackgroundColor="White" StrokeThickness="0">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="22.5"/>
+                                    </Border.StrokeShape>
+                                    <Label Text="+" TextColor="#0A2558" FontSize="28" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" Margin="0,-2,0,0"/>
+                                </Border>
+                            </Grid>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnOgunEkleTapped"/>
+                            </Border.GestureRecognizers>
+                        </Border>
+
+                        <Border Grid.Column="1" BackgroundColor="#0A2558" Stroke="#1E60D5" StrokeThickness="1.5" Padding="0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+                            <Grid>
+                                <Image Source="antrenman_bg.png" Aspect="AspectFill" Opacity="0.5"/>
+                                <Border WidthRequest="45" HeightRequest="45" HorizontalOptions="Center" VerticalOptions="Center" BackgroundColor="White" StrokeThickness="0">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="22.5"/>
+                                    </Border.StrokeShape>
+                                    <Label Text="+" TextColor="#0A2558" FontSize="28" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" Margin="0,-2,0,0"/>
+                                </Border>
+                            </Grid>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnAntrenmanEkleTapped"/>
+                            </Border.GestureRecognizers>
+                        </Border>
+                    </Grid>
+
+                    <BoxView HeightRequest="1" BackgroundColor="#20FFFFFF" HorizontalOptions="Fill" Margin="0,10,0,0"/>
+
+                    <Border Stroke="White" StrokeThickness="1.5" HeightRequest="55" BackgroundColor="Transparent" Padding="0">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="27.5" />
+                        </Border.StrokeShape>
+                        <Grid x:Name="ProgressGrid" ColumnDefinitions="0.1*, 99.9*">
+                            <BoxView x:Name="ProgressBarFill" Grid.Column="0" BackgroundColor="#4CAF50" HorizontalOptions="Fill" VerticalOptions="Fill"/>
+                            <Grid Grid.ColumnSpan="2" ColumnDefinitions="*, Auto" Padding="25,0">
+                                <Label Text="KALORİ HEDEFİ" TextColor="White" FontAttributes="Bold" FontSize="16" VerticalOptions="Center"/>
+                                <Label x:Name="LblYuzde" Text="%0" TextColor="White" FontAttributes="Bold" FontSize="24" Grid.Column="1" VerticalOptions="Center"/>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                </VerticalStackLayout>
+            </ScrollView>
+        </Grid>
+
+        <BoxView x:Name="MenuBgOverlay" IsVisible="False" BackgroundColor="Transparent">
+            <BoxView.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnMenuTapped"/>
+            </BoxView.GestureRecognizers>
+        </BoxView>
+
+        <Border x:Name="MenuDropdown"
+                IsVisible="False"
+                BackgroundColor="#0A2558"
+                Stroke="#1E60D5"
+                StrokeThickness="1.5"
+                WidthRequest="160"
+                HorizontalOptions="End"
+                VerticalOptions="Start"
+                Margin="0,80,15,0"
+                ZIndex="99">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="12" />
+            </Border.StrokeShape>
+
+            <VerticalStackLayout Padding="10" Spacing="5">
+                <HorizontalStackLayout Spacing="15" Padding="10">
+                    <Image Source="profil.png" WidthRequest="22" HeightRequest="22" VerticalOptions="Center"/>
+                    <Label Text="Hesap" TextColor="White" FontSize="16" VerticalOptions="Center" FontAttributes="Bold"/>
+                    <HorizontalStackLayout.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnHesapTapped"/>
+                    </HorizontalStackLayout.GestureRecognizers>
+                </HorizontalStackLayout>
+
+                <BoxView HeightRequest="1" BackgroundColor="#20FFFFFF" Margin="5,0"/>
+
+                <HorizontalStackLayout Spacing="15" Padding="10">
+                    <Image Source="cikis.png" WidthRequest="22" HeightRequest="22" VerticalOptions="Center"/>
+                    <Label Text="Çıkış Yap" TextColor="White" FontSize="16" VerticalOptions="Center" FontAttributes="Bold"/>
+                    <HorizontalStackLayout.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnCikisYapTapped"/>
+                    </HorizontalStackLayout.GestureRecognizers>
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+</ContentPage>

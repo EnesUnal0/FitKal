@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="fitkal.Views.RegisterPage"
+             NavigationPage.HasNavigationBar="False"
+             Shell.NavBarIsVisible="False">
+
+    <Grid>
+        <Image Source="arka_plan.png"
+               Aspect="AspectFill"
+               HorizontalOptions="Fill"
+               VerticalOptions="Fill" />
+
+        <ScrollView>
+            <VerticalStackLayout Padding="30,40,30,30" Spacing="0">
+
+                <Image Source="fitkal_logo.png"
+                       HeightRequest="280" 
+                       Aspect="AspectFit"
+                       HorizontalOptions="Center"
+                       Margin="0,0,0,20"/>
+
+                <Label Text="EMAIL"
+                       TextColor="#3b82f6"
+                       FontAttributes="Bold"
+                       FontSize="14"
+                       Margin="5,0,0,5"/>
+                <Border BackgroundColor="White"
+                        StrokeThickness="0"
+                        HeightRequest="50"
+                        Padding="15,0"
+                        Margin="0,0,0,20">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="8" />
+                    </Border.StrokeShape>
+                    <Entry Placeholder="E-posta adresinizi girin"
+                           Keyboard="Email"
+                           TextColor="Black"
+                           BackgroundColor="Transparent"
+                           VerticalOptions="Center"/>
+                </Border>
+
+                <Label Text="KULLANICI ADI"
+                       TextColor="#3b82f6"
+                       FontAttributes="Bold"
+                       FontSize="14"
+                       Margin="5,0,0,5"/>
+                <Border BackgroundColor="White"
+                        StrokeThickness="0"
+                        HeightRequest="50"
+                        Padding="15,0"
+                        Margin="0,0,0,20">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="8" />
+                    </Border.StrokeShape>
+                    <Entry Placeholder="Kullanıcı adı belirleyin"
+                           TextColor="Black"
+                           BackgroundColor="Transparent"
+                           VerticalOptions="Center"/>
+                </Border>
+
+                <Label Text="ŞİFRE"
+                       TextColor="#3b82f6"
+                       FontAttributes="Bold"
+                       FontSize="14"
+                       Margin="5,0,0,5"/>
+                <Border BackgroundColor="White"
+                        StrokeThickness="0"
+                        HeightRequest="50"
+                        Padding="15,0"
+                        Margin="0,0,0,40">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="8" />
+                    </Border.StrokeShape>
+                    <Entry Placeholder="Şifrenizi oluşturun"
+                           IsPassword="True"
+                           TextColor="Black"
+                           BackgroundColor="Transparent"
+                           VerticalOptions="Center"/>
+                </Border>
+
+                <Button Text="ÜYE OL"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        FontSize="18"
+                        BackgroundColor="#08204B"
+                        BorderColor="#3b82f6"
+                        BorderWidth="1.5"
+                        CornerRadius="8"
+                        HeightRequest="50"
+                        Margin="60,0,60,20"
+                        Clicked="OnRegisterClicked"/>
+
+                <Label Text="Zaten üye misiniz? Giriş yapın"
+                       TextColor="#8b95a8"
+                       FontSize="13"
+                       HorizontalOptions="Center"
+                       Margin="0,10,0,0">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnBackToLoginTapped"/>
+                    </Label.GestureRecognizers>
+                </Label>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>
