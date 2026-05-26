@@ -1,4 +1,5 @@
 ﻿namespace fitkal;
+
 using fitkal.Views;
 
 public partial class MainPage : ContentPage
@@ -39,11 +40,10 @@ public partial class MainPage : ContentPage
             EkraniGuncelle();
         });
 
-        // YENİ EKLENEN KISIM: Antrenman sayfasından gelen kalori verisini yakalar
         MessagingCenter.Subscribe<AntrenmanEklePage, double>(this, "AntrenmanEklendi", (sender, yakilan) =>
         {
             yakilanKalori += Math.Round(yakilan, 1);
-            EkraniGuncelle(); // Ekranda yazan sayıları ve barı anında yeniler
+            EkraniGuncelle();
         });
     }
 
@@ -125,10 +125,17 @@ public partial class MainPage : ContentPage
         await Navigation.PushAsync(new ProfilePage());
     }
 
-    private async void OnAyarlarTapped(object sender, EventArgs e)
+    // YENİ: 13. Madde - Kullanıcı Çıkış Yapısı Entegre Edildi
+    private async void OnCikisYapTapped(object sender, EventArgs e)
     {
         MenuyuAcKapat();
-        await DisplayAlert("Ayarlar", "Ayarlar sayfamız yakında eklenecek!", "Tamam");
+
+        bool onay = await DisplayAlert("Çıkış Yap", "Hesabınızdan güvenli çıkış yapmak istiyor musunuz?", "Evet", "Hayır");
+        if (onay)
+        {
+            // Kullanıcıyı en baştaki Giriş (Login) sayfasına yönlendirip navigation geçmişini sıfırlıyoruz
+            Application.Current.MainPage = new NavigationPage(new LoginPage());
+        }
     }
 
     private async void OnOgunEkleTapped(object sender, EventArgs e)
@@ -140,6 +147,6 @@ public partial class MainPage : ContentPage
     private async void OnAntrenmanEkleTapped(object sender, EventArgs e)
     {
         MenuyuAcKapat();
-        await Navigation.PushAsync(new AntrenmanEklePage()); // YENİ: Antrenman Ekle sayfasına yönlendirir
+        await Navigation.PushAsync(new AntrenmanEklePage());
     }
 }

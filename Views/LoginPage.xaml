@@ -41,7 +41,8 @@
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="8" />
                     </Border.StrokeShape>
-                    <Entry Placeholder=""
+                    <Entry x:Name="EntKullanici" 
+                           Placeholder=""
                            TextColor="Black"
                            BackgroundColor="Transparent"
                            VerticalOptions="Center"/>
@@ -57,16 +58,26 @@
                         StrokeThickness="0"
                         HeightRequest="50"
                         Padding="15,0"
-                        Margin="0,0,0,40">
+                        Margin="0,0,0,10">
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="8" />
                     </Border.StrokeShape>
-                    <Entry Placeholder=""
+                    <Entry x:Name="EntSifre"
+                           Placeholder=""
                            IsPassword="True"
                            TextColor="Black"
                            BackgroundColor="Transparent"
                            VerticalOptions="Center"/>
                 </Border>
+
+                <HorizontalStackLayout Spacing="10" Margin="5,0,0,30">
+                    <CheckBox x:Name="ChkBeniHatirla" Color="#3b82f6" VerticalOptions="Center"/>
+                    <Label Text="Beni Hatırla" TextColor="#8b95a8" VerticalOptions="Center" FontAttributes="Bold">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnBeniHatirlaTapped"/>
+                        </Label.GestureRecognizers>
+                    </Label>
+                </HorizontalStackLayout>
 
                 <Button Text="GİRİŞ"
                         TextColor="White"
