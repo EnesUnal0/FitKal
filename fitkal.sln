@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37216.2 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fitkal", "fitkal\fitkal.csproj", "{5FB489A9-E971-4E41-A6D6-A78CE32329DC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5FB489A9-E971-4E41-A6D6-A78CE32329DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5FB489A9-E971-4E41-A6D6-A78CE32329DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5FB489A9-E971-4E41-A6D6-A78CE32329DC}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{5FB489A9-E971-4E41-A6D6-A78CE32329DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5FB489A9-E971-4E41-A6D6-A78CE32329DC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5FB489A9-E971-4E41-A6D6-A78CE32329DC}.Release|Any CPU.Deploy.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {262EBACE-2CA3-4F94-B10C-98C710577119}
+	EndGlobalSection
+EndGlobal
