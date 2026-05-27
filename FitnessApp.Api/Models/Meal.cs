@@ -10,11 +10,8 @@ public enum MealEntryType
     QuickAdd = 3
 }
 
-public class Meal
+public class Meal : BaseEntity
 {
-    [Key]
-    public int Id { get; set; }
-    
     [Required]
     public int UserId { get; set; }
     [ForeignKey("UserId")]

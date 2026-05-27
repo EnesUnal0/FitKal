@@ -3,11 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FitnessApp.Api.Models;
 
-public class Exercise
+public class Exercise : BaseEntity
 {
-    [Key]
-    public int Id { get; set; }
-
     [Required]
     public int UserId { get; set; }
 

@@ -2,11 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FitnessApp.Api.Models;
 
-public class User
+public class User : BaseEntity
 {
-    [Key]
-    public int Id { get; set; }
-    
     [Required, MaxLength(50)]
     public string Username { get; set; } = string.Empty;
     
