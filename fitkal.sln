@@ -5,6 +5,8 @@ VisualStudioVersion = 17.14.37216.2
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fitkal", "fitkal_maui\fitkal.csproj", "{6428C66E-2B80-B97D-8496-87681973B1D7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FitnessApp.Api", "FitnessApp.Api\FitnessApp.Api.csproj", "{43D16E48-AD55-A9F0-88F2-F9A65A5102FA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,6 +19,10 @@ Global
 		{6428C66E-2B80-B97D-8496-87681973B1D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6428C66E-2B80-B97D-8496-87681973B1D7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6428C66E-2B80-B97D-8496-87681973B1D7}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{43D16E48-AD55-A9F0-88F2-F9A65A5102FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43D16E48-AD55-A9F0-88F2-F9A65A5102FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43D16E48-AD55-A9F0-88F2-F9A65A5102FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43D16E48-AD55-A9F0-88F2-F9A65A5102FA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

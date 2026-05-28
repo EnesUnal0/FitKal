@@ -1,4 +1,4 @@
-namespace fitkal;
+namespace fitkal.Views;
 
 public partial class HeaderView : ContentView
 {

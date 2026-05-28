@@ -1,6 +1,4 @@
-﻿namespace fitkal;
-
-using fitkal.Views;
+﻿namespace fitkal.Views;
 
 public partial class MainPage : ContentPage
 {

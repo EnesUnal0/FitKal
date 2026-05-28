@@ -64,21 +64,21 @@
 
 	<ItemGroup>
 	  <Folder Include="Models\" />
-	  <Folder Include="Services\" />
 	  <Folder Include="ViewModels\" />
+	  <Folder Include="Services\" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Compile Update="HeaderView.xaml.cs">
+	  <Compile Update="Views\HeaderView.xaml.cs">
 	    <DependentUpon>HeaderView.xaml</DependentUpon>
 	  </Compile>
-	  <Compile Update="AntrenmanEklePage.xaml.cs">
+	  <Compile Update="Views\AntrenmanEklePage.xaml.cs">
 	    <DependentUpon>AntrenmanEklePage.xaml</DependentUpon>
 	  </Compile>
-	  <Compile Update="OgunEklePage.xaml.cs">
+	  <Compile Update="Views\OgunEklePage.xaml.cs">
 	    <DependentUpon>OgunEklePage.xaml</DependentUpon>
 	  </Compile>
-	  <Compile Update="ProfilePage.xaml.cs">
+	  <Compile Update="Views\ProfilePage.xaml.cs">
 	    <DependentUpon>ProfilePage.xaml</DependentUpon>
 	  </Compile>
 	  <Compile Update="Views\LoginPage.xaml.cs">
@@ -90,16 +90,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <MauiXaml Update="HeaderView.xaml">
+	  <MauiXaml Update="Views\HeaderView.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="AntrenmanEklePage.xaml">
+	  <MauiXaml Update="Views\AntrenmanEklePage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="OgunEklePage.xaml">
+	  <MauiXaml Update="Views\OgunEklePage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="ProfilePage.xaml">
+	  <MauiXaml Update="Views\ProfilePage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\ForgotPasswordPage.xaml">
