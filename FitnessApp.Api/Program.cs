@@ -31,7 +31,7 @@ builder.Services.AddSwaggerGen(c =>
             {
                 Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
             },
-            new string[] {}
+            Array.Empty<string>()
         }
     });
 });
@@ -42,7 +42,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
-        builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+        b => b.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 });
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -80,12 +80,12 @@ app.UseAuthorization();
 app.MapPost("/api/auth/register", async (UserRegisterDto dto, IAuthService authService) =>
 {
     return await authService.RegisterAsync(dto);
-});
+}).AddEndpointFilter<ValidationFilter>();
 
 app.MapPost("/api/auth/login", async (UserLoginDto dto, IAuthService authService) =>
 {
     return await authService.LoginAsync(dto);
-});
+}).AddEndpointFilter<ValidationFilter>();
 
 app.MapGet("/api/dashboard", async (AppDbContext db, ClaimsPrincipal user) =>
 {
@@ -229,7 +229,7 @@ app.MapPost("/api/meals", async (CreateMealDto dto, AppDbContext db, ClaimsPrinc
         Sugar = meal.Sugar, 
         Date = meal.Date
     });
-}).RequireAuthorization();
+}).RequireAuthorization().AddEndpointFilter<ValidationFilter>();
 
 app.MapPut("/api/meals/{id}", async (int id, UpdateMealDto dto, AppDbContext db, ClaimsPrincipal user) =>
 {
@@ -262,7 +262,7 @@ app.MapPut("/api/meals/{id}", async (int id, UpdateMealDto dto, AppDbContext db,
 
     await db.SaveChangesAsync();
     return Results.Ok(new { message = "Guncellendi" });
-}).RequireAuthorization();
+}).RequireAuthorization().AddEndpointFilter<ValidationFilter>();
 
 app.MapDelete("/api/meals/{id}", async (int id, AppDbContext db, ClaimsPrincipal user) =>
 {
@@ -345,7 +345,7 @@ app.MapPost("/api/exercises", async (CreateExerciseDto dto, AppDbContext db, Cla
         DurationMinutes = exercise.DurationMinutes,
         Date = exercise.Date
     });
-}).RequireAuthorization();
+}).RequireAuthorization().AddEndpointFilter<ValidationFilter>();
 
 app.MapDelete("/api/exercises/{id}", async (int id, AppDbContext db, ClaimsPrincipal user) =>
 {
@@ -387,21 +387,14 @@ app.MapPut("/api/profile", async (UserUpdateDto dto, AppDbContext db, ClaimsPrin
     if (userData == null) return Results.NotFound();
 
     userData.Username = dto.Username ?? userData.Username;
-    userData.Height = dto.Height;
-    userData.Weight = dto.Weight;
-    userData.GoalCalories = dto.GoalCalories;
+    userData.Height = dto.Height ?? userData.Height;
+    userData.Weight = dto.Weight ?? userData.Weight;
+    userData.GoalCalories = dto.GoalCalories ?? userData.GoalCalories;
     userData.Gender = dto.Gender ?? userData.Gender;
 
     await db.SaveChangesAsync();
     return Results.Ok(new { message = "Guncellendi" });
-}).RequireAuthorization();
-
-app.MapPost("/api/foods", async (Food food, AppDbContext db) =>
-{
-    db.Foods.Add(food);
-    await db.SaveChangesAsync();
-    return Results.Ok(food);
-});
+}).RequireAuthorization().AddEndpointFilter<ValidationFilter>();
 
 app.MapGet("/api/foods", async (string? search, AppDbContext db) =>
 {
@@ -416,15 +409,27 @@ app.MapGet("/api/foods", async (string? search, AppDbContext db) =>
     return Results.Ok(foods);
 });
 
-app.MapDelete("/api/foods/{id}", async (int id, AppDbContext db) =>
-{
-    var food = await db.Foods.FindAsync(id);
-    if (food == null) return Results.NotFound();
-
-    db.Foods.Remove(food);
-    await db.SaveChangesAsync();
-
-    return Results.NoContent();
-});
-
 app.Run();
+
+class ValidationFilter : IEndpointFilter
+{
+    public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    {
+        foreach (var argument in context.Arguments)
+        {
+            if (argument == null) continue;
+            
+            var type = argument.GetType();
+            if (type.IsPrimitive || type == typeof(string) || type == typeof(decimal) || type == typeof(DateTime) || type == typeof(Guid) || type.IsEnum) continue;
+
+            var validationContext = new System.ComponentModel.DataAnnotations.ValidationContext(argument);
+            var results = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
+            
+            if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(argument, validationContext, results, true))
+            {
+                return Results.BadRequest(results.Select(e => e.ErrorMessage));
+            }
+        }
+        return await next(context);
+    }
+}

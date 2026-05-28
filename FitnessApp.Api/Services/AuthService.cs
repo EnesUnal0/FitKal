@@ -90,5 +90,21 @@ namespace FitnessApp.Api.Services
                 UserId = user.Id
             });
         }
+
+        public async Task<IResult> ChangePasswordAsync(string username, ChangePasswordDto dto)
+        {
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
+
+            if (user == null || !BCrypt.Net.BCrypt.Verify(dto.OldPassword, user.PasswordHash))
+                return Results.BadRequest("Eski şifre hatalı.");
+
+            if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 5)
+                return Results.BadRequest("Yeni şifre en az 5 karakter olmalıdır.");
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            await _db.SaveChangesAsync();
+
+            return Results.Ok(new { message = "Şifreniz başarıyla değiştirildi." });
+        }
     }
 }

@@ -1,10 +1,12 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 using FitnessApp.Api.Models; 
 
 namespace FitnessApp.Api.DTOs;
 
 public class CreateMealDto
 {
+    [Required]
     public MealEntryType EntryType { get; set; } 
     public int? FoodId { get; set; }
     public string? Name { get; set; }

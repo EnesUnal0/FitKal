@@ -7,5 +7,6 @@ namespace FitnessApp.Api.Services
     {
         Task<IResult> RegisterAsync(UserRegisterDto dto);
         Task<IResult> LoginAsync(UserLoginDto dto);
+        Task<IResult> ChangePasswordAsync(string username, ChangePasswordDto dto);
     }
 }
