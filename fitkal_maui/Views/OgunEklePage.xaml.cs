@@ -1,91 +1,111 @@
-namespace fitkal.Views;
+using fitkal.Services;
+using System.Collections.ObjectModel;
 
-// Veritabanýndan gelecek yemek modelimiz
-public class Besin
-{
-    public string Ad { get; set; }
-    public double Kalori { get; set; } // 100 gramdaki deðerler
-    public double Protein { get; set; }
-    public double Karbonhidrat { get; set; }
-    public double Yag { get; set; }
-    public double Seker { get; set; }
-}
+namespace fitkal.Views;
 
 public partial class OgunEklePage : ContentPage
 {
-    // Veritabaný yerine þimdilik kullanacaðýmýz geçici liste
-    List<Besin> tumYemekler = new List<Besin>
-    {
-        new Besin { Ad = "Tavuk Göðsü (Izgara)", Kalori = 165, Protein = 31, Karbonhidrat = 0, Yag = 3.6, Seker = 0 },
-        new Besin { Ad = "Beyaz Pirinç Pilavý", Kalori = 130, Protein = 2.7, Karbonhidrat = 28, Yag = 0.3, Seker = 0.1 },
-        new Besin { Ad = "Yulaf Ezmesi", Kalori = 389, Protein = 16.9, Karbonhidrat = 66.3, Yag = 6.9, Seker = 0 },
-        new Besin { Ad = "Haþlanmýþ Yumurta", Kalori = 155, Protein = 13, Karbonhidrat = 1.1, Yag = 11, Seker = 1.1 },
-        new Besin { Ad = "Brokoli", Kalori = 34, Protein = 2.8, Karbonhidrat = 6.6, Yag = 0.4, Seker = 1.7 }
-    };
-
-    Besin secilenBesin;
+    private readonly ApiService _apiService;
+    public ObservableCollection<YemekUIModel> SergilenenYemekler { get; set; }
+    private YemekUIModel _secilenYemek;
 
     public OgunEklePage()
     {
         InitializeComponent();
-        YemekListesi.ItemsSource = tumYemekler;
+        _apiService = new ApiService();
+        SergilenenYemekler = new ObservableCollection<YemekUIModel>();
+        YemekListesi.ItemsSource = SergilenenYemekler;
     }
 
-    private async void OnGeriTapped(object sender, EventArgs e)
+    protected override async void OnAppearing()
     {
-        await Navigation.PopAsync();
+        base.OnAppearing();
+        await YemekleriAra("");
     }
 
-    // Arama Çubuðu Filtrelemesi
-    private void OnAramaDegisti(object sender, TextChangedEventArgs e)
+    private async Task YemekleriAra(string kelime)
     {
-        string aranan = e.NewTextValue.ToLower();
-        YemekListesi.ItemsSource = tumYemekler.Where(y => y.Ad.ToLower().Contains(aranan)).ToList();
-    }
+        var gelenBesinler = await _apiService.GetFoodsAsync(kelime);
+        SergilenenYemekler.Clear();
 
-    // Listeden bir yemek seçildiðinde paneli aç ve 100g deðerlerini göster
-    private void OnYemekSecildi(object sender, SelectionChangedEventArgs e)
-    {
-        if (e.CurrentSelection.FirstOrDefault() is Besin secilen)
+        if (gelenBesinler != null)
         {
-            secilenBesin = secilen;
-            LblSecilenYemek.Text = secilen.Ad;
-            LblPro.Text = $"{secilen.Protein}g";
-            LblKarb.Text = $"{secilen.Karbonhidrat}g";
-            LblYag.Text = $"{secilen.Yag}g";
-            LblSek.Text = $"{secilen.Seker}g";
-
-            EntGram.Text = ""; // Önceki gramý temizle
-            HesaplamaPaneli.IsVisible = true;
+            foreach (var besin in gelenBesinler)
+            {
+                SergilenenYemekler.Add(new YemekUIModel
+                {
+                    Id = besin.Id,
+                    Ad = besin.Name,
+                    Kalori = besin.Calories,
+                    Protein = besin.Protein,
+                    Karbonhidrat = besin.Carbohydrate,
+                    Yag = besin.Fat,
+                    Seker = besin.Sugar
+                });
+            }
         }
     }
 
-    // Ekle Butonuna Basýldýðýnda
+    private async void OnAramaDegisti(object sender, TextChangedEventArgs e)
+    {
+        await YemekleriAra(e.NewTextValue);
+    }
+
+    private void OnYemekSecildi(object sender, SelectionChangedEventArgs e)
+    {
+        var secilen = e.CurrentSelection.FirstOrDefault() as YemekUIModel;
+        if (secilen == null) return;
+
+        _secilenYemek = secilen;
+
+        LblSecilenYemek.Text = secilen.Ad.ToUpper();
+        LblPro.Text = $"{secilen.Protein} g";
+        LblKarb.Text = $"{secilen.Karbonhidrat} g";
+        LblYag.Text = $"{secilen.Yag} g";
+        LblSek.Text = $"{secilen.Seker} g";
+
+        EntGram.Text = string.Empty;
+        HesaplamaPaneli.IsVisible = true;
+    }
+
     private async void OnYemekEkleClicked(object sender, EventArgs e)
     {
-        if (secilenBesin != null && double.TryParse(EntGram.Text, out double gram) && gram > 0)
+        if (_secilenYemek == null) return;
+
+        if (!double.TryParse(EntGram.Text, out double gram) || gram <= 0)
         {
-            // Orantý Hesabý: (100 gramdaki deðer / 100) * Yenilen Gram
-            double oran = gram / 100.0;
+            await DisplayAlert("Uyarý", "Lütfen geçerli bir gram miktarý girin.", "Tamam");
+            return;
+        }
 
-            double hesaplananKalori = secilenBesin.Kalori * oran;
-            double hesaplananProtein = secilenBesin.Protein * oran;
-            double hesaplananKarb = secilenBesin.Karbonhidrat * oran;
-            double hesaplananYag = secilenBesin.Yag * oran;
-            double hesaplananSeker = secilenBesin.Seker * oran;
+        bool basariliMi = await _apiService.AddMealAsync(_secilenYemek.Id, gram);
 
-            // Ana sayfaya göndermek üzere deðerleri bir diziye(array) paketliyoruz
-            double[] eklenecekDegerler = { hesaplananKalori, hesaplananProtein, hesaplananKarb, hesaplananYag, hesaplananSeker };
-
-            // Verileri yolla
-            MessagingCenter.Send(this, "YemekEklendi", eklenecekDegerler);
-
-            await DisplayAlert("Afiyet Olsun!", $"{gram}g {secilenBesin.Ad} günlük özetinize eklendi.", "Tamam");
-            await Navigation.PopAsync(); // Sayfayý kapatýp ana sayfaya dön
+        if (basariliMi)
+        {
+            await DisplayAlert("Baþarýlý", "Öðün veritabanýna iþlendi.", "Tamam");
+            YemekListesi.SelectedItem = null;
+            HesaplamaPaneli.IsVisible = false;
+            await Navigation.PopAsync();
         }
         else
         {
-            await DisplayAlert("Hata", "Lütfen geçerli bir gramaj giriniz.", "Tamam");
+            await DisplayAlert("Hata", "Öðün kaydedilemedi. Backend rotalarýný kontrol edin.", "Tamam");
         }
     }
+
+    private async void OnGeriTapped(object sender, TappedEventArgs e)
+    {
+        await Navigation.PopAsync();
+    }
+}
+
+public class YemekUIModel
+{
+    public int Id { get; set; }
+    public string Ad { get; set; }
+    public double Kalori { get; set; }
+    public double Protein { get; set; }
+    public double Karbonhidrat { get; set; }
+    public double Yag { get; set; }
+    public double Seker { get; set; }
 }

@@ -33,7 +33,8 @@
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="8" />
                     </Border.StrokeShape>
-                    <Entry Placeholder="E-posta adresinizi girin"
+                    <Entry x:Name="EntEposta"
+                           Placeholder="E-posta adresinizi girin"
                            Keyboard="Email"
                            TextColor="Black"
                            BackgroundColor="Transparent"
@@ -53,7 +54,8 @@
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="8" />
                     </Border.StrokeShape>
-                    <Entry Placeholder="Kullanıcı adı belirleyin"
+                    <Entry x:Name="EntKullaniciAdi"
+                           Placeholder="Kullanıcı adı belirleyin"
                            TextColor="Black"
                            BackgroundColor="Transparent"
                            VerticalOptions="Center"/>
@@ -72,7 +74,8 @@
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="8" />
                     </Border.StrokeShape>
-                    <Entry Placeholder="Şifrenizi oluşturun"
+                    <Entry x:Name="EntSifre"
+                           Placeholder="Şifrenizi oluşturun"
                            IsPassword="True"
                            TextColor="Black"
                            BackgroundColor="Transparent"

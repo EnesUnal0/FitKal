@@ -14,7 +14,7 @@
 
         <Grid RowDefinitions="77, *">
 
-            <local:HeaderView Grid.Row="0" />
+            <local:HeaderView x:Name="UstHeader" Grid.Row="0" />
 
             <ScrollView Grid.Row="1">
                 <VerticalStackLayout Padding="20,20,20,30" Spacing="25">

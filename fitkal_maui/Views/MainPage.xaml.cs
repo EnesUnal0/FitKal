@@ -1,150 +1,122 @@
-﻿namespace fitkal.Views;
+﻿using fitkal.Services;
+
+namespace fitkal.Views;
 
 public partial class MainPage : ContentPage
 {
-    private string mevcutKullaniciAdi = "Enes";
-    private double hedefKalori = 2500;
-
-    private double alinanKalori = 0;
-    private double yakilanKalori = 0;
-
-    private double protein = 0;
-    private double karbonhidrat = 0;
-    private double yag = 0;
-    private double seker = 0;
+    private readonly ApiService _apiService;
 
     public MainPage()
     {
         InitializeComponent();
-        EkraniGuncelle();
+        _apiService = new ApiService();
 
-        HeaderView.MenuyeTiklandi += (s, e) => MenuyuAcKapat();
-
-        MessagingCenter.Subscribe<ProfilePage, (string, double)>(this, "UpdateProfile", (sender, data) =>
+        if (UstHeader != null)
         {
-            mevcutKullaniciAdi = data.Item1;
-            hedefKalori = data.Item2;
-            EkraniGuncelle();
-        });
-
-        MessagingCenter.Subscribe<OgunEklePage, double[]>(this, "YemekEklendi", (sender, degerler) =>
-        {
-            alinanKalori += Math.Round(degerler[0], 1);
-            protein += Math.Round(degerler[1], 1);
-            karbonhidrat += Math.Round(degerler[2], 1);
-            yag += Math.Round(degerler[3], 1);
-            seker += Math.Round(degerler[4], 1);
-
-            EkraniGuncelle();
-        });
-
-        MessagingCenter.Subscribe<AntrenmanEklePage, double>(this, "AntrenmanEklendi", (sender, yakilan) =>
-        {
-            yakilanKalori += Math.Round(yakilan, 1);
-            EkraniGuncelle();
-        });
-    }
-
-    private void EkraniGuncelle()
-    {
-        double netKalori = alinanKalori - yakilanKalori;
-        double kalanKalori = hedefKalori - netKalori;
-
-        LblKullaniciAdi.Text = mevcutKullaniciAdi;
-
-        LblAlinanKalori.Text = $"{alinanKalori} cal";
-        LblYakilanKalori.Text = $"{yakilanKalori} cal";
-        LblNetKalori.Text = $"{netKalori} cal";
-        LblKalanKalori.Text = $"{kalanKalori} cal";
-
-        LblProtein.Text = $"{protein} g";
-        LblKarbonhidrat.Text = $"{karbonhidrat} g";
-        LblYag.Text = $"{yag} g";
-        LblSeker.Text = $"{seker} g";
-
-        CalorieProgressGuncelle(alinanKalori, hedefKalori);
-    }
-
-    private void CalorieProgressGuncelle(double alinan, double hedef)
-    {
-        if (hedef <= 0) return;
-
-        double oran = alinan / hedef;
-        if (oran > 1) oran = 1;
-
-        int yuzde = (int)(oran * 100);
-
-        if (LblYuzde != null)
-        {
-            LblYuzde.Text = $"%{yuzde}";
+            UstHeader.MenuTiklandi += (s, e) => OnMenuTapped(null, null);
         }
+    }
 
-        double doluPayi = yuzde;
-        double bosPayi = 100 - yuzde;
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        await AnaSayfaVerileriniYukle();
+    }
 
-        if (bosPayi <= 0) bosPayi = 0.1;
-        if (doluPayi <= 0) doluPayi = 0.1;
+    private async Task AnaSayfaVerileriniYukle()
+    {
+        var profil = await _apiService.GetProfileAsync();
+        var ozet = await _apiService.GetDailySummaryAsync();
 
-        if (ProgressGrid != null)
+        if (profil != null)
         {
-            ProgressGrid.ColumnDefinitions = new ColumnDefinitionCollection
+            LblKullaniciAdi.Text = string.IsNullOrEmpty(profil.Username)
+                ? "Kullanıcı"
+                : profil.Username;
+
+            int hedefKalori = profil.GoalCalories ?? 2000;
+
+            double alinanKalori = ozet?.TotalCalories ?? 0;
+            double yakilanKalori = ozet?.TotalBurned ?? 0;
+            double netKalori = ozet?.NetCalories ?? alinanKalori;
+            double kalanKalori = hedefKalori - alinanKalori;
+
+            LblAlinanKalori.Text = $"{alinanKalori:F0} cal";
+            LblYakilanKalori.Text = $"{yakilanKalori:F0} cal";
+            LblNetKalori.Text = $"{netKalori:F0} cal";
+            LblKalanKalori.Text = $"{(kalanKalori < 0 ? 0 : kalanKalori):F0} cal";
+
+            LblProtein.Text = $"{ozet?.TotalProtein ?? 0:F1} g";
+            LblKarbonhidrat.Text = $"{ozet?.TotalCarbohydrate ?? 0:F1} g";
+            LblYag.Text = $"{ozet?.TotalFat ?? 0:F1} g";
+            LblSeker.Text = $"{ozet?.TotalSugar ?? 0:F1} g";
+
+            if (hedefKalori > 0)
             {
-                new ColumnDefinition { Width = new GridLength(doluPayi, GridUnitType.Star) },
-                new ColumnDefinition { Width = new GridLength(bosPayi, GridUnitType.Star) }
-            };
-        }
+                double yuzde = (alinanKalori / hedefKalori) * 100;
 
-        if (ProgressBarFill != null)
-        {
-            if (yuzde < 50)
-                ProgressBarFill.BackgroundColor = Color.FromArgb("#4CAF50");
-            else if (yuzde >= 50 && yuzde < 85)
-                ProgressBarFill.BackgroundColor = Color.FromArgb("#FF9800");
+                if (yuzde > 100)
+                    yuzde = 100;
+
+                if (yuzde < 0)
+                    yuzde = 0;
+
+                LblYuzde.Text = $"%{yuzde:F0}";
+
+                double solPay = yuzde == 0 ? 0.1 : yuzde;
+                double sagPay = 100 - yuzde == 0 ? 0.1 : 100 - yuzde;
+
+                ProgressGrid.ColumnDefinitions[0].Width =
+                    new GridLength(solPay, GridUnitType.Star);
+
+                ProgressGrid.ColumnDefinitions[1].Width =
+                    new GridLength(sagPay, GridUnitType.Star);
+            }
             else
-                ProgressBarFill.BackgroundColor = Color.FromArgb("#E53935");
+            {
+                LblYuzde.Text = "%0";
+
+                ProgressGrid.ColumnDefinitions[0].Width =
+                    new GridLength(0.1, GridUnitType.Star);
+
+                ProgressGrid.ColumnDefinitions[1].Width =
+                    new GridLength(100, GridUnitType.Star);
+            }
         }
     }
 
-    private void MenuyuAcKapat()
+    private async void OnOgunEkleTapped(object sender, TappedEventArgs e)
     {
-        bool isVisible = !MenuDropdown.IsVisible;
-        MenuDropdown.IsVisible = isVisible;
-        MenuBgOverlay.IsVisible = isVisible;
-    }
-
-    private void OnMenuTapped(object sender, EventArgs e)
-    {
-        MenuyuAcKapat();
-    }
-
-    private async void OnHesapTapped(object sender, EventArgs e)
-    {
-        MenuyuAcKapat();
-        await Navigation.PushAsync(new ProfilePage());
-    }
-
-    // YENİ: 13. Madde - Kullanıcı Çıkış Yapısı Entegre Edildi
-    private async void OnCikisYapTapped(object sender, EventArgs e)
-    {
-        MenuyuAcKapat();
-
-        bool onay = await DisplayAlert("Çıkış Yap", "Hesabınızdan güvenli çıkış yapmak istiyor musunuz?", "Evet", "Hayır");
-        if (onay)
-        {
-            // Kullanıcıyı en baştaki Giriş (Login) sayfasına yönlendirip navigation geçmişini sıfırlıyoruz
-            Application.Current.MainPage = new NavigationPage(new LoginPage());
-        }
-    }
-
-    private async void OnOgunEkleTapped(object sender, EventArgs e)
-    {
-        MenuyuAcKapat();
         await Navigation.PushAsync(new OgunEklePage());
     }
 
-    private async void OnAntrenmanEkleTapped(object sender, EventArgs e)
+    private async void OnAntrenmanEkleTapped(object sender, TappedEventArgs e)
     {
-        MenuyuAcKapat();
         await Navigation.PushAsync(new AntrenmanEklePage());
+    }
+
+    private void OnMenuTapped(object sender, TappedEventArgs e)
+    {
+        MenuDropdown.IsVisible = !MenuDropdown.IsVisible;
+        MenuBgOverlay.IsVisible = MenuDropdown.IsVisible;
+    }
+
+    private async void OnHesapTapped(object sender, TappedEventArgs e)
+    {
+        MenuDropdown.IsVisible = false;
+        MenuBgOverlay.IsVisible = false;
+
+        await Navigation.PushAsync(new ProfilePage());
+    }
+
+    private void OnCikisYapTapped(object sender, TappedEventArgs e)
+    {
+        MenuDropdown.IsVisible = false;
+        MenuBgOverlay.IsVisible = false;
+
+        SecureStorage.Default.Remove("jwt_token");
+        Preferences.Default.Remove("remember_me");
+
+        Application.Current.MainPage = new LoginPage();
     }
 }

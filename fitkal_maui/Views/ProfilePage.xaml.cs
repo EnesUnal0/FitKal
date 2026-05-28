@@ -1,60 +1,93 @@
-using System;
-using Microsoft.Maui.Controls;
+using fitkal.Services;
 
 namespace fitkal.Views;
 
 public partial class ProfilePage : ContentPage
 {
+    private readonly ApiService _apiService;
+
     public ProfilePage()
     {
         InitializeComponent();
-
-        // Form alanlarýna baþlangýç mock verilerini dolduruyoruz
-        EntAd.Text = "Enes";
-        EntSoyad.Text = "Ünal";
-        EntKilo.Text = "80";
-        EntBoy.Text = "180";
-        EntHedefKilo.Text = "75";
-        EntHedefKalori.Text = "2500";
-
-        // 17. Madde için DatePicker'a varsayýlan bir tarih atýyoruz
-        DpDogumTarihi.Date = new DateTime(2004, 1, 1);
-
-        // 16. Madde için Picker elemanýnýn varsayýlan olarak ilk maddesini seçtiriyoruz
-        PckAktivite.SelectedIndex = 2; // "Orta Aktif" seçeneði gelir
+        _apiService = new ApiService();
     }
 
+    // --- SAYFA AÇILDIÐINDA ÇALIÞIR ---
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        await ProfiliYukle();
+    }
+
+    // --- API'DEN VERÝLERÝ ÇEKÝP KUTULARA VE ÜST BÝLGÝLERE DOLDURUR ---
+    private async Task ProfiliYukle()
+    {
+        var profil = await _apiService.GetProfileAsync();
+
+        if (profil != null)
+        {
+            // Kutularý Doldurma
+            // Not: Backend modelinde (UserProfile) Ad, Soyad, Doðum Tarihi, Hedef Kilo ve Aktivite 
+            // alanlarý olmadýðý için o kutularý sadece görsel olarak tutuyoruz, veritabanýndan çekemiyoruz.
+            EntBoy.Text = profil.Height?.ToString();
+            EntKilo.Text = profil.Weight?.ToString();
+            EntHedefKalori.Text = profil.GoalCalories?.ToString();
+
+            // Üst kýsýmdaki dinamik etiketleri güncelleme
+            LblAdSoyadUst.Text = profil.Username ?? "Kullanýcý";
+
+            string guncelKilo = profil.Weight.HasValue ? profil.Weight.Value.ToString() : "--";
+            string guncelBoy = profil.Height.HasValue ? profil.Height.Value.ToString() : "--";
+            LblAltBilgi.Text = $"{guncelKilo} kg, {guncelBoy} cm";
+        }
+    }
+
+    // --- GÜNCELLE BUTONUNA TIKLANDIÐINDA ÇALIÞIR ---
     private async void OnGuncelleClicked(object sender, EventArgs e)
     {
-        string ad = EntAd.Text;
-        string soyad = EntSoyad.Text;
-        string hedefKaloriStr = EntHedefKalori.Text;
+        // Butonu geçici olarak kilitle (kullanýcý üst üste basmasýn diye)
+        var btn = (Button)sender;
+        btn.IsEnabled = false;
+        btn.Text = "GÜNCELLENÝYOR...";
 
-        // 23. Madde: Form veri doðrulama mantýðý (Boþ býrakýlamaz kontrolü)
-        if (string.IsNullOrWhiteSpace(ad) || string.IsNullOrWhiteSpace(soyad))
+        // Kullanýcýnýn girdiði metinleri sayýsal deðerlere dönüþtür
+        double? boy = double.TryParse(EntBoy.Text, out double b) ? b : null;
+        double? kilo = double.TryParse(EntKilo.Text, out double k) ? k : null;
+        int? kalori = int.TryParse(EntHedefKalori.Text, out int c) ? c : null;
+
+        // PckAktivite, DpDogumTarihi, EntAd, EntSoyad, EntHedefKilo gibi alanlar
+        // þu anki backend (UserProfile) modelinde olmadýðý için onlarý API'ye gönderemiyoruz.
+        // Ýleride backend'e bu alanlar eklenirse buraya dahil edeceðiz.
+
+        // Gönderilecek paketi hazýrla (Þimdilik backend'in desteklediði alanlar)
+        var guncelVeri = new UserProfile
         {
-            await DisplayAlert("Hata", "Ad ve Soyad alanlarý boþ býrakýlamaz!", "Tamam");
-            return;
-        }
+            Height = boy,
+            Weight = kilo,
+            GoalCalories = kalori,
+            Gender = "Belirtilmemiþ" // Backend modelinde var ama tasarýmda yok, varsayýlan atýyoruz
+        };
 
-        if (double.TryParse(hedefKaloriStr, out double yeniHedef))
+        // Kuryeyi API'ye gönder
+        bool basariliMi = await _apiService.UpdateProfileAsync(guncelVeri);
+
+        if (basariliMi)
         {
-            // Kullanýcýnýn seçtiði DatePicker ve Picker verilerini string deðiþkenlere alýyoruz
-            string secilenDogumTarihi = DpDogumTarihi.Date.ToString("dd/MM/yyyy");
-            string secilenAktivite = PckAktivite.SelectedItem?.ToString() ?? "Belirtilmedi";
+            await DisplayAlert("Baþarýlý", "Profil bilgileriniz güncellendi.", "Tamam");
 
-            // Ana sayfaya (MainPage) yeni hedefi ve ismi sinyal olarak gönderiyoruz
-            MessagingCenter.Send(this, "UpdateProfile", (ad, yeniHedef));
-
-            // Bilgileri ekranda gösteren baþarýlý uyarýsý
-            await DisplayAlert("Baþarýlý", $"Profil bilgileriniz güncellendi!\nDoðum Tarihi: {secilenDogumTarihi}\nAktivite: {secilenAktivite}", "Tamam");
-
-            // Güncelleme sonrasý ana sayfaya geri döner
-            Application.Current.MainPage = new NavigationPage(new MainPage());
+            // Baþarýlý olursa üstteki etiketleri de hemen güncelle
+            string guncelKiloStr = kilo.HasValue ? kilo.Value.ToString() : "--";
+            string guncelBoyStr = boy.HasValue ? boy.Value.ToString() : "--";
+            LblAltBilgi.Text = $"{guncelKiloStr} kg, {guncelBoyStr} cm";
+            LblHedefKiloUst.Text = $"Hedef Kg : {EntHedefKilo.Text}";
         }
         else
         {
-            await DisplayAlert("Hata", "Lütfen geçerli bir kalori deðeri girin.", "Tamam");
+            await DisplayAlert("Hata", "Bilgiler güncellenirken bir sorun oluþtu.", "Tamam");
         }
+
+        // Ýþlem bitince butonu eski haline getir
+        btn.IsEnabled = true;
+        btn.Text = "GÜNCELLE";
     }
 }

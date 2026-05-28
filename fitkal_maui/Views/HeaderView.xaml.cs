@@ -2,22 +2,25 @@ namespace fitkal.Views;
 
 public partial class HeaderView : ContentView
 {
-    // YENÝ: Dinlenebilir bir olay (event) oluþturduk
-    public static event EventHandler? MenuyeTiklandi;
+    // MainPage'in beklediði o habercimiz (Event)
+    public event EventHandler MenuTiklandi;
 
     public HeaderView()
     {
         InitializeComponent();
     }
 
-    private void OnHomeTapped(object sender, EventArgs e)
+    // Menü ikonuna týklandýðýnda çalýþacak metot
+    private void OnMenuIconTapped(object sender, TappedEventArgs e)
     {
-        Application.Current.MainPage = new NavigationPage(new MainPage());
+        // Ýkona týklandýðýnda MainPage'e "Menüye týklandý, aç!" sinyalini ateþler
+        MenuTiklandi?.Invoke(this, EventArgs.Empty);
     }
 
-    private void OnMenuTapped(object sender, EventArgs e)
+    // Senin tasarýmýndaki "Ana Sayfaya Dön" ikonuna/logosuna týklandýðýnda çalýþacak metot
+    private async void OnHomeTapped(object sender, TappedEventArgs e)
     {
-        // Týklanýnca ana sayfaya sinyal gönderir
-        MenuyeTiklandi?.Invoke(this, EventArgs.Empty);
+        // Kullanýcýyý AppShell üzerindeki ana sayfaya yönlendirir
+        await Shell.Current.GoToAsync("//MainPage");
     }
 }

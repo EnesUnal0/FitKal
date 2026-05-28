@@ -1,46 +1,56 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="fitkal.Views.HeaderView">
+             x:Class="fitkal.Views.HeaderView"
+             BackgroundColor="#0A2558">
 
-    <Border BackgroundColor="#0A2558" 
-            Stroke="#1E60D5" 
-            StrokeThickness="1.5"
-            Margin="0, 2, 0, 0"
-            HeightRequest="75">
-        
-        <Border.StrokeShape>
-            <RoundRectangle CornerRadius="0" />
-        </Border.StrokeShape>
+    <Grid RowDefinitions="77,2"
+          BackgroundColor="#0A2558">
 
-        <Grid ColumnDefinitions="*, Auto, Auto" Padding="20,0">
+        <Grid Grid.Row="0"
+              ColumnDefinitions="Auto, *, Auto"
+              Padding="20,0"
+              VerticalOptions="Center"
+              HeightRequest="77">
 
-            <Image Source="fitkal_logo.png" 
-                   HorizontalOptions="Start" 
-                   HeightRequest="55" 
-                   Aspect="AspectFit" 
-                   VerticalOptions="Center"/>
+            <Image Grid.Column="0"
+                   Source="fitkal_logo.png"
+                   HeightRequest="55"
+                   WidthRequest="55"
+                   VerticalOptions="Center"
+                   Aspect="AspectFit"/>
 
-            <Image Grid.Column="1" 
-                   Source="home_icon.png" 
-                   HeightRequest="40" 
-                   WidthRequest="40" 
-                   Margin="0,0,15,0" 
-                   VerticalOptions="Center">
-                <Image.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OnHomeTapped"/>
-                </Image.GestureRecognizers>
-            </Image>
+            <HorizontalStackLayout Grid.Column="2"
+                                   VerticalOptions="Center"
+                                   Spacing="20"
+                                   HorizontalOptions="End">
 
-            <Image Grid.Column="2" 
-                   Source="menu_icon.png" 
-                   HeightRequest="40" 
-                   WidthRequest="40" 
-                   VerticalOptions="Center">
-                <Image.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OnMenuTapped"/>
-                </Image.GestureRecognizers>
-            </Image>
+                <Image Source="home_icon.png"
+                       HeightRequest="32"
+                       WidthRequest="32"
+                       VerticalOptions="Center">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnHomeTapped"/>
+                    </Image.GestureRecognizers>
+                </Image>
+
+                <Image Source="menu_icon.png"
+                       HeightRequest="32"
+                       WidthRequest="32"
+                       VerticalOptions="Center">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnMenuIconTapped"/>
+                    </Image.GestureRecognizers>
+                </Image>
+
+            </HorizontalStackLayout>
+
         </Grid>
-    </Border>
+
+        <!-- Header altı ince mavi ayırıcı çizgi -->
+        <BoxView Grid.Row="1"
+                 HeightRequest="2"
+                 BackgroundColor="#1E60D5"
+                 HorizontalOptions="Fill"/>
+    </Grid>
 </ContentView>

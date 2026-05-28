@@ -1,39 +1,66 @@
-using fitkal; // MainPage ana dizinde olduðu için bu satýrý eklemeliyiz
+using fitkal.Services;
 
 namespace fitkal.Views;
 
 public partial class LoginPage : ContentPage
 {
+    private readonly ApiService _apiService;
+    private bool _otomatikKontrolYapildi = false;
+
     public LoginPage()
     {
         InitializeComponent();
+        _apiService = new ApiService();
     }
 
-    // YENÝ EKLENEN (18. Madde): "Beni Hatýrla" yazýsýna týklanýnca kutucuðu iþaretler/kaldýrýr
-    private void OnBeniHatirlaTapped(object sender, EventArgs e)
+    protected override async void OnAppearing()
     {
-        ChkBeniHatirla.IsChecked = !ChkBeniHatirla.IsChecked;
+        base.OnAppearing();
+
+        if (_otomatikKontrolYapildi)
+            return;
+
+        _otomatikKontrolYapildi = true;
+
+        bool beniHatirla = Preferences.Default.Get("remember_me", false);
+        var token = await SecureStorage.Default.GetAsync("jwt_token");
+
+        if (beniHatirla && !string.IsNullOrEmpty(token))
+        {
+            Application.Current.MainPage = new AppShell();
+        }
     }
 
     private async void OnGirisClicked(object sender, EventArgs e)
     {
-        // YENÝ EKLENEN (23. Madde): Form veri doðrulamasý (Boþ býrakýlamaz kontrolü)
-        string kullanici = EntKullanici.Text;
-        string sifre = EntSifre.Text;
+        string username = EntKullanici.Text ?? string.Empty;
+        string password = EntSifre.Text ?? string.Empty;
 
-        if (string.IsNullOrWhiteSpace(kullanici) || string.IsNullOrWhiteSpace(sifre))
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
         {
-            await DisplayAlert("Uyarý", "Lütfen kullanýcý adý ve þifrenizi giriniz.", "Tamam");
-            return; // Kodun buradan aþaðý devam edip ana sayfayý açmasýný engeller
+            await DisplayAlert("Uyarý", "Lütfen kullanýcý adý ve þifrenizi girin.", "Tamam");
+            return;
         }
 
-        // (Ýsteðe baðlý) Ýleride veritabanýna baðlarken Checkbox'ýn durumunu böyle okuyabilirsin
+        var btn = (Button)sender;
+        btn.IsEnabled = false;
+        btn.Text = "GÝRÝÞ YAPILIYOR...";
+
         bool beniHatirla = ChkBeniHatirla.IsChecked;
 
-        // Senin mevcut yönlendirme kodun:
-        await Navigation.PushAsync(new MainPage());
+        bool isSuccess = await _apiService.LoginAsync(username, password, beniHatirla);
 
-        Console.WriteLine($"Giriþ yapýldý, MainPage'e yönlendiriliyor... (Beni Hatýrla: {beniHatirla})");
+        if (isSuccess)
+        {
+            Application.Current.MainPage = new AppShell();
+        }
+        else
+        {
+            await DisplayAlert("Hata", "Kullanýcý adý veya þifre hatalý. Lütfen tekrar deneyin.", "Tamam");
+
+            btn.IsEnabled = true;
+            btn.Text = "GÝRÝÞ";
+        }
     }
 
     private async void OnUyeOlClicked(object sender, EventArgs e)
@@ -41,8 +68,13 @@ public partial class LoginPage : ContentPage
         await Navigation.PushAsync(new RegisterPage());
     }
 
+    private void OnBeniHatirlaTapped(object sender, EventArgs e)
+    {
+        ChkBeniHatirla.IsChecked = !ChkBeniHatirla.IsChecked;
+    }
+
     private async void OnSifremiUnuttumTapped(object sender, EventArgs e)
     {
-        await Navigation.PushAsync(new ForgotPasswordPage());
+        await DisplayAlert("Bilgi", "Þifre sýfýrlama ekraný yakýnda eklenecek.", "Tamam");
     }
 }

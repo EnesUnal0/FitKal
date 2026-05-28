@@ -13,6 +13,7 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -29,7 +30,11 @@ builder.Services.AddSwaggerGen(c =>
         {
             new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
             },
             Array.Empty<string>()
         }
@@ -90,43 +95,61 @@ app.MapPost("/api/auth/login", async (UserLoginDto dto, IAuthService authService
 app.MapGet("/api/dashboard", async (AppDbContext db, ClaimsPrincipal user) =>
 {
     var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (!int.TryParse(userIdString, out int userId)) return Results.Unauthorized();
+
+    if (!int.TryParse(userIdString, out int userId))
+        return Results.Unauthorized();
 
     var userData = await db.Users.FindAsync(userId);
-    if (userData == null) return Results.NotFound();
+
+    if (userData == null)
+        return Results.NotFound();
 
     var today = DateTime.Today;
-    var meals = await db.Meals.Where(m => m.UserId == userId && m.Date.Date == today).ToListAsync();
-    var exercises = await db.Exercises.Where(e => e.UserId == userId && e.Date.Date == today).ToListAsync();
+
+    var meals = await db.Meals
+        .Where(m => m.UserId == userId && m.Date.Date == today)
+        .ToListAsync();
+
+    var exercises = await db.Exercises
+        .Where(e => e.UserId == userId && e.Date.Date == today)
+        .ToListAsync();
 
     double totalEaten = meals.Sum(m => m.Calories);
+
+    // Burada sadece antrenmanla yakılan kalori hesaplanıyor.
+    // Pasif/bazal yakım artık eklenmiyor.
     double totalExerciseBurned = exercises.Sum(e => e.CaloriesBurned);
 
-    double bmr = (10 * (userData.Weight ?? 0)) + (6.25 * (userData.Height ?? 0)) - (5 * 25);
-    
-    if (!string.IsNullOrEmpty(userData.Gender) && userData.Gender.Equals("Kadın", StringComparison.OrdinalIgnoreCase))
-        bmr -= 161;
-    else
-        bmr += 5;
-
-    double passiveBurn = bmr * 1.2;
-    double grandTotalBurned = passiveBurn + totalExerciseBurned;
-    double netCalories = totalEaten - grandTotalBurned;
-
     double goalCalories = Convert.ToDouble(userData.GoalCalories);
-    double caloriePercentage = goalCalories > 0 ? Math.Round(totalEaten / goalCalories * 100, 1) : 0;
+
+    double netCalories = totalEaten - totalExerciseBurned;
+
+    double caloriePercentage = goalCalories > 0
+        ? Math.Round(totalEaten / goalCalories * 100, 1)
+        : 0;
 
     return Results.Ok(new
     {
         DailyGoalCalories = userData.GoalCalories,
+
+        // Alınan kalori
         TotalEaten = totalEaten,
-        TotalBurned = Math.Round(grandTotalBurned),
+
+        // Yakılan kalori artık sadece antrenman kalorisi.
+        // Antrenman yoksa 0 döner.
+        TotalBurned = Math.Round(totalExerciseBurned),
+
+        // Net kalori = alınan - antrenmanla yakılan
         NetCalories = Math.Round(netCalories),
-        KalanKalori = Math.Round(goalCalories - netCalories),
+
+        // Kalan kalori = hedef - alınan
+        KalanKalori = Math.Round(goalCalories - totalEaten),
+
         TotalProtein = Math.Round(meals.Sum(m => m.Protein), 1),
         TotalCarbs = Math.Round(meals.Sum(m => m.Carbs), 1),
         TotalFat = Math.Round(meals.Sum(m => m.Fat), 1),
         TotalSugar = Math.Round(meals.Sum(m => m.Sugar), 1),
+
         CaloriePercentage = caloriePercentage
     });
 }).RequireAuthorization();
@@ -134,13 +157,16 @@ app.MapGet("/api/dashboard", async (AppDbContext db, ClaimsPrincipal user) =>
 app.MapGet("/api/meals/recent", async (AppDbContext db, ClaimsPrincipal user) =>
 {
     var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (!int.TryParse(userIdString, out int userId)) return Results.Unauthorized();
+
+    if (!int.TryParse(userIdString, out int userId))
+        return Results.Unauthorized();
 
     var recentMeals = await db.Meals
         .Where(m => m.UserId == userId)
         .OrderByDescending(m => m.Date)
         .Take(5)
-        .Select(m => new RecentMealsDto {
+        .Select(m => new RecentMealsDto
+        {
             Name = m.Name ?? "Bilinmeyen",
             Calories = m.Calories,
             Protein = m.Protein,
@@ -154,10 +180,13 @@ app.MapGet("/api/meals/recent", async (AppDbContext db, ClaimsPrincipal user) =>
 app.MapGet("/api/meals", async (AppDbContext db, ClaimsPrincipal user) =>
 {
     var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (!int.TryParse(userIdString, out int userId)) return Results.Unauthorized();
+
+    if (!int.TryParse(userIdString, out int userId))
+        return Results.Unauthorized();
 
     var meals = await db.Meals
         .Where(m => m.UserId == userId)
+        .OrderByDescending(m => m.Date)
         .Select(m => new MealResponseDto
         {
             Id = m.Id,
@@ -180,7 +209,11 @@ app.MapGet("/api/meals", async (AppDbContext db, ClaimsPrincipal user) =>
 app.MapPost("/api/meals", async (CreateMealDto dto, AppDbContext db, ClaimsPrincipal user) =>
 {
     var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (!int.TryParse(userIdString, out int userId)) return Results.Unauthorized();
+
+    if (!int.TryParse(userIdString, out int userId))
+        return Results.Unauthorized();
+
+    double gramAmount = dto.GramAmount ?? 100;
 
     var meal = new Meal
     {
@@ -188,23 +221,28 @@ app.MapPost("/api/meals", async (CreateMealDto dto, AppDbContext db, ClaimsPrinc
         EntryType = dto.EntryType,
         FoodId = dto.FoodId,
         Name = dto.Name,
-        GramAmount = dto.GramAmount,
+        GramAmount = gramAmount,
         Date = dto.Date != default ? dto.Date : DateTime.Now
     };
 
-    if (dto.EntryType == MealEntryType.Library && dto.FoodId.HasValue)
+    // Mobil uygulama FoodId gönderdiği için EntryType eksik olsa bile
+    // bunu kütüphaneden seçilmiş yemek olarak kabul ediyoruz.
+    if (dto.FoodId.HasValue)
     {
         var food = await db.Foods.FindAsync(dto.FoodId.Value);
-        if (food != null)
-        {
-            double multiplier = (dto.GramAmount ?? 100) / 100.0;
-            meal.Name = food.Name;
-            meal.Calories = (int)(food.CaloriesPer100g * multiplier);
-            meal.Protein = food.ProteinPer100g * multiplier;
-            meal.Carbs = food.CarbsPer100g * multiplier;
-            meal.Fat = food.FatPer100g * multiplier;
-            meal.Sugar = food.SugarPer100g * multiplier;
-        }
+
+        if (food == null)
+            return Results.BadRequest("Seçilen yemek veritabanında bulunamadı.");
+
+        double multiplier = gramAmount / 100.0;
+
+        meal.EntryType = MealEntryType.Library;
+        meal.Name = food.Name;
+        meal.Calories = (int)(food.CaloriesPer100g * multiplier);
+        meal.Protein = food.ProteinPer100g * multiplier;
+        meal.Carbs = food.CarbsPer100g * multiplier;
+        meal.Fat = food.FatPer100g * multiplier;
+        meal.Sugar = food.SugarPer100g * multiplier;
     }
     else
     {
@@ -226,7 +264,7 @@ app.MapPost("/api/meals", async (CreateMealDto dto, AppDbContext db, ClaimsPrinc
         Protein = meal.Protein,
         Carbs = meal.Carbs,
         Fat = meal.Fat,
-        Sugar = meal.Sugar, 
+        Sugar = meal.Sugar,
         Date = meal.Date
     });
 }).RequireAuthorization().AddEndpointFilter<ValidationFilter>();
@@ -234,17 +272,24 @@ app.MapPost("/api/meals", async (CreateMealDto dto, AppDbContext db, ClaimsPrinc
 app.MapPut("/api/meals/{id}", async (int id, UpdateMealDto dto, AppDbContext db, ClaimsPrincipal user) =>
 {
     var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (!int.TryParse(userIdString, out int userId)) return Results.Unauthorized();
 
-    var meal = await db.Meals.FirstOrDefaultAsync(m => m.Id == id && m.UserId == userId);
-    if (meal == null) return Results.NotFound();
+    if (!int.TryParse(userIdString, out int userId))
+        return Results.Unauthorized();
+
+    var meal = await db.Meals
+        .FirstOrDefaultAsync(m => m.Id == id && m.UserId == userId);
+
+    if (meal == null)
+        return Results.NotFound();
 
     if (meal.EntryType == MealEntryType.Library && meal.FoodId.HasValue)
     {
         var food = await db.Foods.FindAsync(meal.FoodId.Value);
+
         if (food != null)
         {
             double multiplier = (dto.GramAmount ?? 100) / 100.0;
+
             meal.GramAmount = dto.GramAmount;
             meal.Calories = (int)(food.CaloriesPer100g * multiplier);
             meal.Protein = food.ProteinPer100g * multiplier;
@@ -261,16 +306,25 @@ app.MapPut("/api/meals/{id}", async (int id, UpdateMealDto dto, AppDbContext db,
     }
 
     await db.SaveChangesAsync();
-    return Results.Ok(new { message = "Guncellendi" });
+
+    return Results.Ok(new
+    {
+        message = "Guncellendi"
+    });
 }).RequireAuthorization().AddEndpointFilter<ValidationFilter>();
 
 app.MapDelete("/api/meals/{id}", async (int id, AppDbContext db, ClaimsPrincipal user) =>
 {
     var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (!int.TryParse(userIdString, out int userId)) return Results.Unauthorized();
 
-    var meal = await db.Meals.FirstOrDefaultAsync(m => m.Id == id && m.UserId == userId);
-    if (meal == null) return Results.NotFound();
+    if (!int.TryParse(userIdString, out int userId))
+        return Results.Unauthorized();
+
+    var meal = await db.Meals
+        .FirstOrDefaultAsync(m => m.Id == id && m.UserId == userId);
+
+    if (meal == null)
+        return Results.NotFound();
 
     db.Meals.Remove(meal);
     await db.SaveChangesAsync();
@@ -281,7 +335,9 @@ app.MapDelete("/api/meals/{id}", async (int id, AppDbContext db, ClaimsPrincipal
 app.MapGet("/api/exercises", async (AppDbContext db, ClaimsPrincipal user) =>
 {
     var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (!int.TryParse(userIdString, out int userId)) return Results.Unauthorized();
+
+    if (!int.TryParse(userIdString, out int userId))
+        return Results.Unauthorized();
 
     var exercises = await db.Exercises
         .Where(e => e.UserId == userId)
@@ -301,14 +357,24 @@ app.MapGet("/api/exercises", async (AppDbContext db, ClaimsPrincipal user) =>
 app.MapPost("/api/exercises", async (CreateExerciseDto dto, AppDbContext db, ClaimsPrincipal user) =>
 {
     var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (!int.TryParse(userIdString, out int userId)) return Results.Unauthorized();
 
-    double finalBurned = 0;
-    string exerciseName = "Manuel Egzersiz";
+    if (!int.TryParse(userIdString, out int userId))
+        return Results.Unauthorized();
 
-    if (dto.Type == ExerciseType.Manual)
+    double finalBurned;
+    string exerciseName = "Antrenman";
+
+    // Mobil uygulama hesaplanmış kaloriyi ManualCalories olarak gönderiyor.
+    // Bu değer geldiyse backend tekrar hesaplama yapmadan direkt bunu kullanır.
+    if (dto.ManualCalories.HasValue && dto.ManualCalories.Value > 0)
     {
-        finalBurned = dto.ManualCalories ?? 0;
+        finalBurned = dto.ManualCalories.Value;
+        exerciseName = dto.Type.ToString();
+    }
+    else if (dto.Type == ExerciseType.Manual)
+    {
+        finalBurned = 0;
+        exerciseName = "Manuel Egzersiz";
     }
     else
     {
@@ -321,6 +387,7 @@ app.MapPost("/api/exercises", async (CreateExerciseDto dto, AppDbContext db, Cla
             ExerciseType.WeightTraining => 6.0,
             _ => 0
         };
+
         finalBurned = dto.DurationMinutes * multiplier;
         exerciseName = dto.Type.ToString();
     }
@@ -350,10 +417,15 @@ app.MapPost("/api/exercises", async (CreateExerciseDto dto, AppDbContext db, Cla
 app.MapDelete("/api/exercises/{id}", async (int id, AppDbContext db, ClaimsPrincipal user) =>
 {
     var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (!int.TryParse(userIdString, out int userId)) return Results.Unauthorized();
 
-    var exercise = await db.Exercises.FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
-    if (exercise == null) return Results.NotFound();
+    if (!int.TryParse(userIdString, out int userId))
+        return Results.Unauthorized();
+
+    var exercise = await db.Exercises
+        .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
+
+    if (exercise == null)
+        return Results.NotFound();
 
     db.Exercises.Remove(exercise);
     await db.SaveChangesAsync();
@@ -364,15 +436,20 @@ app.MapDelete("/api/exercises/{id}", async (int id, AppDbContext db, ClaimsPrinc
 app.MapGet("/api/profile", async (AppDbContext db, ClaimsPrincipal user) =>
 {
     var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (!int.TryParse(userIdString, out int userId)) return Results.Unauthorized();
+
+    if (!int.TryParse(userIdString, out int userId))
+        return Results.Unauthorized();
 
     var userData = await db.Users.FindAsync(userId);
-    if (userData == null) return Results.NotFound();
 
-    return Results.Ok(new { 
-        userData.Username, 
-        userData.Height, 
-        userData.Weight, 
+    if (userData == null)
+        return Results.NotFound();
+
+    return Results.Ok(new
+    {
+        userData.Username,
+        userData.Height,
+        userData.Weight,
         userData.GoalCalories,
         userData.Gender
     });
@@ -381,10 +458,14 @@ app.MapGet("/api/profile", async (AppDbContext db, ClaimsPrincipal user) =>
 app.MapPut("/api/profile", async (UserUpdateDto dto, AppDbContext db, ClaimsPrincipal user) =>
 {
     var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (!int.TryParse(userIdString, out int userId)) return Results.Unauthorized();
+
+    if (!int.TryParse(userIdString, out int userId))
+        return Results.Unauthorized();
 
     var userData = await db.Users.FindAsync(userId);
-    if (userData == null) return Results.NotFound();
+
+    if (userData == null)
+        return Results.NotFound();
 
     userData.Username = dto.Username ?? userData.Username;
     userData.Height = dto.Height ?? userData.Height;
@@ -393,19 +474,24 @@ app.MapPut("/api/profile", async (UserUpdateDto dto, AppDbContext db, ClaimsPrin
     userData.Gender = dto.Gender ?? userData.Gender;
 
     await db.SaveChangesAsync();
-    return Results.Ok(new { message = "Guncellendi" });
+
+    return Results.Ok(new
+    {
+        message = "Guncellendi"
+    });
 }).RequireAuthorization().AddEndpointFilter<ValidationFilter>();
 
 app.MapGet("/api/foods", async (string? search, AppDbContext db) =>
 {
     var query = db.Foods.AsQueryable();
-    
+
     if (!string.IsNullOrWhiteSpace(search))
     {
         query = query.Where(f => f.Name.Contains(search));
     }
 
     var foods = await query.ToListAsync();
+
     return Results.Ok(foods);
 });
 
@@ -413,23 +499,43 @@ app.Run();
 
 class ValidationFilter : IEndpointFilter
 {
-    public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    public async ValueTask<object?> InvokeAsync(
+        EndpointFilterInvocationContext context,
+        EndpointFilterDelegate next)
     {
         foreach (var argument in context.Arguments)
         {
-            if (argument == null) continue;
-            
-            var type = argument.GetType();
-            if (type.IsPrimitive || type == typeof(string) || type == typeof(decimal) || type == typeof(DateTime) || type == typeof(Guid) || type.IsEnum) continue;
+            if (argument == null)
+                continue;
 
-            var validationContext = new System.ComponentModel.DataAnnotations.ValidationContext(argument);
-            var results = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
-            
-            if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(argument, validationContext, results, true))
+            var type = argument.GetType();
+
+            if (type.IsPrimitive ||
+                type == typeof(string) ||
+                type == typeof(decimal) ||
+                type == typeof(DateTime) ||
+                type == typeof(Guid) ||
+                type.IsEnum)
+            {
+                continue;
+            }
+
+            var validationContext =
+                new System.ComponentModel.DataAnnotations.ValidationContext(argument);
+
+            var results =
+                new List<System.ComponentModel.DataAnnotations.ValidationResult>();
+
+            if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(
+                    argument,
+                    validationContext,
+                    results,
+                    true))
             {
                 return Results.BadRequest(results.Select(e => e.ErrorMessage));
             }
         }
+
         return await next(context);
     }
 }

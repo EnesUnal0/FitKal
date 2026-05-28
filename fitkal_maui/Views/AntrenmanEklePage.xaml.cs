@@ -1,16 +1,20 @@
+using fitkal.Services;
+
 namespace fitkal.Views;
 
-// Egzersiz modelimiz
 public class Egzersiz
 {
-    public string Ad { get; set; }
-    public double SaatlikKalori { get; set; } // 60 dakikada yakýlan ortalama kalori
+    public string Ad { get; set; } = string.Empty;
+
+    // 60 dakikada yakýlan ortalama kalori
+    public double SaatlikKalori { get; set; }
 }
 
 public partial class AntrenmanEklePage : ContentPage
 {
-    // Veritabaný yerine kullanacaðýmýz liste (Daha sonra DB'den gelecek)
-    List<Egzersiz> tumEgzersizler = new List<Egzersiz>
+    private readonly ApiService _apiService;
+
+    private readonly List<Egzersiz> tumEgzersizler = new List<Egzersiz>
     {
         new Egzersiz { Ad = "Koþu (Orta Tempo)", SaatlikKalori = 600 },
         new Egzersiz { Ad = "Aðýrlýk Antrenmaný", SaatlikKalori = 300 },
@@ -19,11 +23,14 @@ public partial class AntrenmanEklePage : ContentPage
         new Egzersiz { Ad = "Yürüyüþ (Hafif Tempo)", SaatlikKalori = 250 }
     };
 
-    Egzersiz secilenEgzersiz;
+    private Egzersiz? secilenEgzersiz;
 
     public AntrenmanEklePage()
     {
         InitializeComponent();
+
+        _apiService = new ApiService();
+
         EgzersizListesi.ItemsSource = tumEgzersizler;
     }
 
@@ -32,45 +39,72 @@ public partial class AntrenmanEklePage : ContentPage
         await Navigation.PopAsync();
     }
 
-    // Arama Çubuðu Filtrelemesi
     private void OnAramaDegisti(object sender, TextChangedEventArgs e)
     {
-        string aranan = e.NewTextValue.ToLower();
-        EgzersizListesi.ItemsSource = tumEgzersizler.Where(x => x.Ad.ToLower().Contains(aranan)).ToList();
+        string aranan = e.NewTextValue?.ToLower() ?? string.Empty;
+
+        EgzersizListesi.ItemsSource = tumEgzersizler
+            .Where(x => x.Ad.ToLower().Contains(aranan))
+            .ToList();
     }
 
-    // Listeden bir antrenman seçildiðinde paneli aç
     private void OnEgzersizSecildi(object sender, SelectionChangedEventArgs e)
     {
         if (e.CurrentSelection.FirstOrDefault() is Egzersiz secilen)
         {
             secilenEgzersiz = secilen;
-            LblSecilenEgzersiz.Text = secilen.Ad;
-            LblSaatlikKalori.Text = $"{secilen.SaatlikKalori} cal";
 
-            EntDakika.Text = ""; // Önceki süreyi temizle
+            LblSecilenEgzersiz.Text = secilen.Ad;
+            LblSaatlikKalori.Text = $"{secilen.SaatlikKalori:F0} cal";
+
+            EntDakika.Text = string.Empty;
             HesaplamaPaneli.IsVisible = true;
         }
     }
 
-    // Ekle Butonuna Basýldýðýnda
     private async void OnAntrenmanEkleClicked(object sender, EventArgs e)
     {
-        if (secilenEgzersiz != null && double.TryParse(EntDakika.Text, out double dakika) && dakika > 0)
+        if (secilenEgzersiz == null)
         {
-            // Orantý Hesabý: (Dakika / 60) * Saatlik Kalori
-            double oran = dakika / 60.0;
-            double yakilanKalori = secilenEgzersiz.SaatlikKalori * oran;
+            await DisplayAlert("Hata", "Lütfen bir antrenman seçiniz.", "Tamam");
+            return;
+        }
 
-            // Ana sayfaya (MainPage) gönder
-            MessagingCenter.Send(this, "AntrenmanEklendi", yakilanKalori);
+        if (!double.TryParse(EntDakika.Text, out double dakika) || dakika <= 0)
+        {
+            await DisplayAlert("Hata", "Lütfen geçerli bir dakika giriniz.", "Tamam");
+            return;
+        }
 
-            await DisplayAlert("Tebrikler!", $"{dakika} dakika {secilenEgzersiz.Ad} yaparak {Math.Round(yakilanKalori, 1)} kalori yaktýnýz.", "Tamam");
-            await Navigation.PopAsync(); // Sayfayý kapatýp ana sayfaya dön
+        double oran = dakika / 60.0;
+        double yakilanKalori = secilenEgzersiz.SaatlikKalori * oran;
+
+        bool basariliMi = await _apiService.AddExerciseAsync(
+            secilenEgzersiz.Ad,
+            dakika,
+            yakilanKalori
+        );
+
+        if (basariliMi)
+        {
+            await DisplayAlert(
+                "Tebrikler!",
+                $"{dakika:F0} dakika {secilenEgzersiz.Ad} yaparak {Math.Round(yakilanKalori, 1)} kalori yaktýnýz.",
+                "Tamam"
+            );
+
+            EgzersizListesi.SelectedItem = null;
+            HesaplamaPaneli.IsVisible = false;
+
+            await Navigation.PopAsync();
         }
         else
         {
-            await DisplayAlert("Hata", "Lütfen geçerli bir dakika giriniz.", "Tamam");
+            await DisplayAlert(
+                "Hata",
+                "Antrenman veritabanýna kaydedilemedi. API baðlantýsýný kontrol edin.",
+                "Tamam"
+            );
         }
     }
 }
