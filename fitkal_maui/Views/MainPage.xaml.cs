@@ -30,9 +30,11 @@ public partial class MainPage : ContentPage
 
         if (profil != null)
         {
-            LblKullaniciAdi.Text = string.IsNullOrEmpty(profil.Username)
-                ? "Kullanıcı"
-                : profil.Username;
+            LblKullaniciAdi.Text = !string.IsNullOrWhiteSpace(profil.Name)
+                ? profil.Name
+                : !string.IsNullOrWhiteSpace(profil.Username)
+                    ? profil.Username
+                    : "Kullanıcı";
 
             int hedefKalori = profil.GoalCalories ?? 2000;
 

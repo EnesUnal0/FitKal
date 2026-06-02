@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using FitnessApp.Api.Models;
 
 namespace FitnessApp.Api.DTOs;
 
@@ -19,14 +20,22 @@ public class UserRegisterDto
 
 public class UserUpdateDto
 {
-    [MinLength(3, ErrorMessage = "Kullanıcı adı en az 3 karakter olmalıdır.")]
     public string? Username { get; set; }
+
+    public string? Name { get; set; }
+    public string? Surname { get; set; }
+    public DateTime? BirthDate { get; set; }
+
     public double? Height { get; set; }
     public double? Weight { get; set; }
-    public string? Gender { get; set; }
-    public int? GoalCalories { get; set; }
-}
+    public double? TargetWeight { get; set; }
 
+    public int? GoalCalories { get; set; }
+
+    public string? Gender { get; set; }
+
+    public ActivityLevel? ActivityLevel { get; set; }
+}
 public class UserLoginDto
 {
     [Required(ErrorMessage = "Kullanıcı adı zorunludur.")]
@@ -45,6 +54,9 @@ public class AuthResponseDto
 
 public class ChangePasswordDto
 {
+    [Required(ErrorMessage = "Kullanıcı adı zorunludur.")]
+    public required string Username { get; set; }
+
     [Required(ErrorMessage = "Eski şifre zorunludur.")]
     public required string OldPassword { get; set; }
 

@@ -6,7 +6,7 @@ public class Egzersiz
 {
     public string Ad { get; set; } = string.Empty;
 
-    // 60 dakikada yakýlan ortalama kalori
+ 
     public double SaatlikKalori { get; set; }
 }
 

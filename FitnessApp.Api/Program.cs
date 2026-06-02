@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
@@ -92,6 +93,28 @@ app.MapPost("/api/auth/login", async (UserLoginDto dto, IAuthService authService
     return await authService.LoginAsync(dto);
 }).AddEndpointFilter<ValidationFilter>();
 
+app.MapPut("/api/auth/change-password", async (ChangePasswordDto dto, AppDbContext db) =>
+{
+    var user = await db.Users.FirstOrDefaultAsync(x => x.Username == dto.Username);
+
+    if (user == null)
+        return Results.BadRequest("Kullanıcı bulunamadı.");
+
+    bool eskiSifreDogruMu = BCrypt.Net.BCrypt.Verify(dto.OldPassword, user.PasswordHash);
+
+    if (!eskiSifreDogruMu)
+        return Results.BadRequest("Eski şifre hatalı.");
+
+    user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new
+    {
+        message = "Şifre başarıyla güncellendi."
+    });
+});
+
 app.MapGet("/api/dashboard", async (AppDbContext db, ClaimsPrincipal user) =>
 {
     var userIdString = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -116,8 +139,7 @@ app.MapGet("/api/dashboard", async (AppDbContext db, ClaimsPrincipal user) =>
 
     double totalEaten = meals.Sum(m => m.Calories);
 
-    // Burada sadece antrenmanla yakılan kalori hesaplanıyor.
-    // Pasif/bazal yakım artık eklenmiyor.
+
     double totalExerciseBurned = exercises.Sum(e => e.CaloriesBurned);
 
     double goalCalories = Convert.ToDouble(userData.GoalCalories);
@@ -132,17 +154,14 @@ app.MapGet("/api/dashboard", async (AppDbContext db, ClaimsPrincipal user) =>
     {
         DailyGoalCalories = userData.GoalCalories,
 
-        // Alınan kalori
         TotalEaten = totalEaten,
 
-        // Yakılan kalori artık sadece antrenman kalorisi.
-        // Antrenman yoksa 0 döner.
         TotalBurned = Math.Round(totalExerciseBurned),
 
-        // Net kalori = alınan - antrenmanla yakılan
+     
         NetCalories = Math.Round(netCalories),
 
-        // Kalan kalori = hedef - alınan
+        
         KalanKalori = Math.Round(goalCalories - totalEaten),
 
         TotalProtein = Math.Round(meals.Sum(m => m.Protein), 1),
@@ -225,8 +244,7 @@ app.MapPost("/api/meals", async (CreateMealDto dto, AppDbContext db, ClaimsPrinc
         Date = dto.Date != default ? dto.Date : DateTime.Now
     };
 
-    // Mobil uygulama FoodId gönderdiği için EntryType eksik olsa bile
-    // bunu kütüphaneden seçilmiş yemek olarak kabul ediyoruz.
+
     if (dto.FoodId.HasValue)
     {
         var food = await db.Foods.FindAsync(dto.FoodId.Value);
@@ -364,8 +382,7 @@ app.MapPost("/api/exercises", async (CreateExerciseDto dto, AppDbContext db, Cla
     double finalBurned;
     string exerciseName = "Antrenman";
 
-    // Mobil uygulama hesaplanmış kaloriyi ManualCalories olarak gönderiyor.
-    // Bu değer geldiyse backend tekrar hesaplama yapmadan direkt bunu kullanır.
+
     if (dto.ManualCalories.HasValue && dto.ManualCalories.Value > 0)
     {
         finalBurned = dto.ManualCalories.Value;
@@ -448,10 +465,15 @@ app.MapGet("/api/profile", async (AppDbContext db, ClaimsPrincipal user) =>
     return Results.Ok(new
     {
         userData.Username,
+        userData.Name,
+        userData.Surname,
+        userData.BirthDate,
         userData.Height,
         userData.Weight,
+        userData.TargetWeight,
         userData.GoalCalories,
-        userData.Gender
+        userData.Gender,
+        userData.ActivityLevel
     });
 }).RequireAuthorization();
 
@@ -467,19 +489,34 @@ app.MapPut("/api/profile", async (UserUpdateDto dto, AppDbContext db, ClaimsPrin
     if (userData == null)
         return Results.NotFound();
 
-    userData.Username = dto.Username ?? userData.Username;
+    userData.Name = dto.Name ?? userData.Name;
+    userData.Surname = dto.Surname ?? userData.Surname;
+    userData.BirthDate = dto.BirthDate ?? userData.BirthDate;
+
     userData.Height = dto.Height ?? userData.Height;
     userData.Weight = dto.Weight ?? userData.Weight;
+    userData.TargetWeight = dto.TargetWeight ?? userData.TargetWeight;
+
     userData.GoalCalories = dto.GoalCalories ?? userData.GoalCalories;
     userData.Gender = dto.Gender ?? userData.Gender;
+    userData.ActivityLevel = dto.ActivityLevel ?? userData.ActivityLevel;
 
     await db.SaveChangesAsync();
 
     return Results.Ok(new
     {
-        message = "Guncellendi"
+        message = "Guncellendi",
+        userData.Name,
+        userData.Surname,
+        userData.BirthDate,
+        userData.Height,
+        userData.Weight,
+        userData.TargetWeight,
+        userData.GoalCalories,
+        userData.Gender,
+        userData.ActivityLevel
     });
-}).RequireAuthorization().AddEndpointFilter<ValidationFilter>();
+}).RequireAuthorization();
 
 app.MapGet("/api/foods", async (string? search, AppDbContext db) =>
 {

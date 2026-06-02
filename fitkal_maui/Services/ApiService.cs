@@ -22,7 +22,7 @@ public class ApiService
         _httpClient.Timeout = TimeSpan.FromSeconds(10);
     }
 
-    // --- GİRİŞ YAPMA ---
+
     public async Task<bool> LoginAsync(string username, string password, bool beniHatirla)
     {
         try
@@ -60,7 +60,7 @@ public class ApiService
         }
     }
 
-    // --- KAYIT OLMA ---
+
     public async Task<bool> RegisterAsync(string username, string email, string password)
     {
         try
@@ -89,7 +89,30 @@ public class ApiService
         }
     }
 
-    // --- PROFİL BİLGİLERİNİ GETİRME ---
+    public async Task<bool> ChangePasswordAsync(string username, string oldPassword, string newPassword)
+    {
+        try
+        {
+            var data = new
+            {
+                Username = username,
+                OldPassword = oldPassword,
+                NewPassword = newPassword
+            };
+
+            var json = System.Text.Json.JsonSerializer.Serialize(data);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PutAsync("/api/auth/change-password", content);
+
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public async Task<UserProfile?> GetProfileAsync()
     {
         await SetAuthTokenAsync();
@@ -115,7 +138,7 @@ public class ApiService
         }
     }
 
-    // --- PROFİL GÜNCELLEME ---
+
     public async Task<bool> UpdateProfileAsync(UserProfile profileData)
     {
         await SetAuthTokenAsync();
@@ -139,7 +162,7 @@ public class ApiService
         }
     }
 
-    // --- BESİNLERİ ÇEKME ---
+   
     public async Task<List<FoodItem>> GetFoodsAsync(string searchQuery = "")
     {
         await SetAuthTokenAsync();
@@ -170,7 +193,7 @@ public class ApiService
         }
     }
 
-    // --- ÖĞÜN KAYDETME ---
+
     public async Task<bool> AddMealAsync(int foodId, double grams)
     {
         await SetAuthTokenAsync();
@@ -200,7 +223,7 @@ public class ApiService
         }
     }
 
-    // --- ANTRENMAN KAYDETME ---
+
     public async Task<bool> AddExerciseAsync(string exerciseName, double durationMinutes, double caloriesBurned)
     {
         await SetAuthTokenAsync();
@@ -232,7 +255,7 @@ public class ApiService
         }
     }
 
-    // --- GÜNLÜK ÖZETİ ÇEKME ---
+
     public async Task<DailySummaryDto?> GetDailySummaryAsync()
     {
         await SetAuthTokenAsync();
@@ -258,7 +281,7 @@ public class ApiService
         }
     }
 
-    // --- TOKEN EKLEME ---
+ 
     private async Task SetAuthTokenAsync()
     {
         var token = await SecureStorage.Default.GetAsync("jwt_token");
@@ -271,7 +294,6 @@ public class ApiService
     }
 }
 
-// --- VERİ MODELLERİ ---
 
 public class AuthResponse
 {
@@ -281,20 +303,21 @@ public class AuthResponse
 
 public class UserProfile
 {
-    [JsonPropertyName("username")]
-    public string Username { get; set; } = string.Empty;
+    public string? Username { get; set; }
 
-    [JsonPropertyName("height")]
+    public string? Name { get; set; }
+    public string? Surname { get; set; }
+    public DateTime? BirthDate { get; set; }
+
     public double? Height { get; set; }
-
-    [JsonPropertyName("weight")]
     public double? Weight { get; set; }
+    public double? TargetWeight { get; set; }
 
-    [JsonPropertyName("goalCalories")]
     public int? GoalCalories { get; set; }
 
-    [JsonPropertyName("gender")]
-    public string Gender { get; set; } = string.Empty;
+    public string? Gender { get; set; }
+
+    public int? ActivityLevel { get; set; }
 }
 
 public class FoodItem

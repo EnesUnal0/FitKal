@@ -12,82 +12,200 @@ public partial class ProfilePage : ContentPage
         _apiService = new ApiService();
     }
 
-    // --- SAYFA AÇILDIÐINDA ÇALIÞIR ---
     protected override async void OnAppearing()
     {
         base.OnAppearing();
         await ProfiliYukle();
     }
 
-    // --- API'DEN VERÝLERÝ ÇEKÝP KUTULARA VE ÜST BÝLGÝLERE DOLDURUR ---
     private async Task ProfiliYukle()
     {
         var profil = await _apiService.GetProfileAsync();
 
         if (profil != null)
         {
-            // Kutularý Doldurma
-            // Not: Backend modelinde (UserProfile) Ad, Soyad, Doðum Tarihi, Hedef Kilo ve Aktivite 
-            // alanlarý olmadýðý için o kutularý sadece görsel olarak tutuyoruz, veritabanýndan çekemiyoruz.
+            EntAd.Text = profil.Name;
+            EntSoyad.Text = profil.Surname;
+
+            if (profil.BirthDate.HasValue)
+            {
+                DpDogumTarihi.Date = profil.BirthDate.Value;
+            }
+
             EntBoy.Text = profil.Height?.ToString();
             EntKilo.Text = profil.Weight?.ToString();
+            EntHedefKilo.Text = profil.TargetWeight?.ToString();
             EntHedefKalori.Text = profil.GoalCalories?.ToString();
 
-            // Üst kýsýmdaki dinamik etiketleri güncelleme
-            LblAdSoyadUst.Text = profil.Username ?? "Kullanýcý";
+            if (profil.ActivityLevel.HasValue)
+            {
+                PickerAktiviteSeviyesi.SelectedIndex = profil.ActivityLevel.Value;
+            }
+            else
+            {
+                PickerAktiviteSeviyesi.SelectedIndex = -1;
+            }
 
-            string guncelKilo = profil.Weight.HasValue ? profil.Weight.Value.ToString() : "--";
-            string guncelBoy = profil.Height.HasValue ? profil.Height.Value.ToString() : "--";
+            string gorunenAd = !string.IsNullOrWhiteSpace(profil.Name)
+                ? profil.Name
+                : !string.IsNullOrWhiteSpace(profil.Username)
+                    ? profil.Username
+                    : "Kullanýcý";
+
+            LblAdSoyadUst.Text = gorunenAd;
+
+            string guncelKilo = profil.Weight.HasValue
+                ? profil.Weight.Value.ToString()
+                : "--";
+
+            string guncelBoy = profil.Height.HasValue
+                ? profil.Height.Value.ToString()
+                : "--";
+
             LblAltBilgi.Text = $"{guncelKilo} kg, {guncelBoy} cm";
+
+            if (profil.TargetWeight.HasValue)
+                LblHedefKiloUst.Text = $"Hedef Kg : {profil.TargetWeight.Value}";
+            else
+                LblHedefKiloUst.Text = "Hedef Kg : --";
         }
     }
 
-    // --- GÜNCELLE BUTONUNA TIKLANDIÐINDA ÇALIÞIR ---
     private async void OnGuncelleClicked(object sender, EventArgs e)
     {
-        // Butonu geçici olarak kilitle (kullanýcý üst üste basmasýn diye)
         var btn = (Button)sender;
+
         btn.IsEnabled = false;
         btn.Text = "GÜNCELLENÝYOR...";
 
-        // Kullanýcýnýn girdiði metinleri sayýsal deðerlere dönüþtür
-        double? boy = double.TryParse(EntBoy.Text, out double b) ? b : null;
-        double? kilo = double.TryParse(EntKilo.Text, out double k) ? k : null;
-        int? kalori = int.TryParse(EntHedefKalori.Text, out int c) ? c : null;
-
-        // PckAktivite, DpDogumTarihi, EntAd, EntSoyad, EntHedefKilo gibi alanlar
-        // þu anki backend (UserProfile) modelinde olmadýðý için onlarý API'ye gönderemiyoruz.
-        // Ýleride backend'e bu alanlar eklenirse buraya dahil edeceðiz.
-
-        // Gönderilecek paketi hazýrla (Þimdilik backend'in desteklediði alanlar)
-        var guncelVeri = new UserProfile
+        try
         {
-            Height = boy,
-            Weight = kilo,
-            GoalCalories = kalori,
-            Gender = "Belirtilmemiþ" // Backend modelinde var ama tasarýmda yok, varsayýlan atýyoruz
-        };
+            double? boy = double.TryParse(EntBoy.Text, out double b)
+                ? b
+                : null;
 
-        // Kuryeyi API'ye gönder
-        bool basariliMi = await _apiService.UpdateProfileAsync(guncelVeri);
+            double? kilo = double.TryParse(EntKilo.Text, out double k)
+                ? k
+                : null;
+
+            double? hedefKilo = double.TryParse(EntHedefKilo.Text, out double hk)
+                ? hk
+                : null;
+
+            int? kalori = int.TryParse(EntHedefKalori.Text, out int c)
+                ? c
+                : null;
+
+            DateTime? dogumTarihi = DpDogumTarihi.Date;
+
+            int? aktiviteSeviyesi = PickerAktiviteSeviyesi.SelectedIndex >= 0
+                ? PickerAktiviteSeviyesi.SelectedIndex
+                : null;
+
+            var guncelVeri = new UserProfile
+            {
+                Name = EntAd.Text,
+                Surname = EntSoyad.Text,
+                BirthDate = dogumTarihi,
+
+                Height = boy,
+                Weight = kilo,
+                TargetWeight = hedefKilo,
+                GoalCalories = kalori,
+
+                Gender = "Belirtilmemiþ",
+                ActivityLevel = aktiviteSeviyesi
+            };
+
+            bool basariliMi = await _apiService.UpdateProfileAsync(guncelVeri);
+
+            if (basariliMi)
+            {
+                await DisplayAlert("Baþarýlý", "Profil bilgileriniz güncellendi.", "Tamam");
+
+                string gorunenAd = !string.IsNullOrWhiteSpace(EntAd.Text)
+                    ? EntAd.Text
+                    : "Kullanýcý";
+
+                LblAdSoyadUst.Text = gorunenAd;
+
+                string guncelKiloStr = kilo.HasValue
+                    ? kilo.Value.ToString()
+                    : "--";
+
+                string guncelBoyStr = boy.HasValue
+                    ? boy.Value.ToString()
+                    : "--";
+
+                LblAltBilgi.Text = $"{guncelKiloStr} kg, {guncelBoyStr} cm";
+
+                if (hedefKilo.HasValue)
+                    LblHedefKiloUst.Text = $"Hedef Kg : {hedefKilo.Value}";
+                else
+                    LblHedefKiloUst.Text = "Hedef Kg : --";
+            }
+            else
+            {
+                await DisplayAlert("Hata", "Bilgiler güncellenirken bir sorun oluþtu.", "Tamam");
+            }
+        }
+        finally
+        {
+            btn.IsEnabled = true;
+            btn.Text = "GÜNCELLE";
+        }
+    }
+
+    private void OnSifrePenceresiAcClicked(object sender, EventArgs e)
+    {
+        SifrePopup.IsVisible = true;
+    }
+
+    private void OnSifrePenceresiKapatClicked(object sender, EventArgs e)
+    {
+        SifrePopup.IsVisible = false;
+        SifreAlanlariniTemizle();
+    }
+
+    private async void OnSifreGuncelleClicked(object sender, EventArgs e)
+    {
+        string username = EntSifreKullaniciAdi.Text?.Trim() ?? string.Empty;
+        string eskiSifre = EntEskiSifre.Text ?? string.Empty;
+        string yeniSifre = EntYeniSifre.Text ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(username) ||
+            string.IsNullOrWhiteSpace(eskiSifre) ||
+            string.IsNullOrWhiteSpace(yeniSifre))
+        {
+            await DisplayAlert("Uyarý", "Lütfen kullanýcý adý, eski þifre ve yeni þifre alanlarýný doldurun.", "Tamam");
+            return;
+        }
+
+        if (yeniSifre.Length < 5)
+        {
+            await DisplayAlert("Uyarý", "Yeni þifre en az 5 karakter olmalýdýr.", "Tamam");
+            return;
+        }
+
+        bool basariliMi = await _apiService.ChangePasswordAsync(username, eskiSifre, yeniSifre);
 
         if (basariliMi)
         {
-            await DisplayAlert("Baþarýlý", "Profil bilgileriniz güncellendi.", "Tamam");
+            await DisplayAlert("Baþarýlý", "Þifreniz baþarýyla güncellendi.", "Tamam");
 
-            // Baþarýlý olursa üstteki etiketleri de hemen güncelle
-            string guncelKiloStr = kilo.HasValue ? kilo.Value.ToString() : "--";
-            string guncelBoyStr = boy.HasValue ? boy.Value.ToString() : "--";
-            LblAltBilgi.Text = $"{guncelKiloStr} kg, {guncelBoyStr} cm";
-            LblHedefKiloUst.Text = $"Hedef Kg : {EntHedefKilo.Text}";
+            SifrePopup.IsVisible = false;
+            SifreAlanlariniTemizle();
         }
         else
         {
-            await DisplayAlert("Hata", "Bilgiler güncellenirken bir sorun oluþtu.", "Tamam");
+            await DisplayAlert("Hata", "Kullanýcý adý veya eski þifre hatalý.", "Tamam");
         }
+    }
 
-        // Ýþlem bitince butonu eski haline getir
-        btn.IsEnabled = true;
-        btn.Text = "GÜNCELLE";
+    private void SifreAlanlariniTemizle()
+    {
+        EntSifreKullaniciAdi.Text = string.Empty;
+        EntEskiSifre.Text = string.Empty;
+        EntYeniSifre.Text = string.Empty;
     }
 }
