@@ -4,3 +4,4 @@ AUTH-3 Sifre sifirlama ekrani eklendi
 AUTH-4 Kullanici kayit Register API eklendi 
 AUTH-5 Kullanici giris Login API eklendi 
 AUTH-6 Sifre sifirlama API eklendi 
+AUTH-7 Kayit giris ve sifre sifirlama akisi birlikte test edildi 
